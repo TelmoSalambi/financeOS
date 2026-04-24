@@ -200,19 +200,22 @@ const CompoundInterestSimulator = () => {
       </div>
 
       <div className="lg:col-span-2 space-y-4 md:space-y-6">
-        <div className="bento-card p-6 md:p-10 bg-blue-600 text-white border-none shadow-2xl shadow-blue-200/50">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Estimativa em {inputs.years} anos</p>
-          <h2 className="text-3xl md:text-5xl font-black truncate">{total.toLocaleString('pt-BR')} <span className="text-sm md:text-xl font-normal opacity-60">Kz</span></h2>
-          <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-6 md:gap-12">
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Total Investido</p>
-              <p className="text-lg md:text-xl font-bold truncate">{(inputs.initial + (inputs.monthly * 12 * inputs.years)).toLocaleString('pt-BR')} Kz</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Ganhos Juros</p>
-              <p className="text-lg md:text-xl font-bold text-emerald-300 truncate">{(total - (inputs.initial + (inputs.monthly * 12 * inputs.years))).toLocaleString('pt-BR')} Kz</p>
+        <div className="bento-card p-6 md:p-10 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-2xl shadow-emerald-200/50 relative overflow-hidden group">
+          <div className="relative z-10">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Estimativa em {inputs.years} anos</p>
+            <h2 className="text-3xl md:text-5xl font-black truncate">{total.toLocaleString('pt-BR')} <span className="text-sm md:text-xl font-normal opacity-60">Kz</span></h2>
+            <div className="mt-6 md:mt-8 grid grid-cols-2 gap-4 md:gap-12 border-t border-white/10 pt-6 md:pt-8">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Total Investido</p>
+                <p className="text-lg md:text-xl font-bold truncate">{(inputs.initial + (inputs.monthly * 12 * inputs.years)).toLocaleString('pt-BR')} Kz</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Ganhos Juros</p>
+                <p className="text-lg md:text-xl font-bold text-emerald-300 truncate">{(total - (inputs.initial + (inputs.monthly * 12 * inputs.years))).toLocaleString('pt-BR')} Kz</p>
+              </div>
             </div>
           </div>
+          <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-700"></div>
         </div>
 
         <div className="bento-card p-6 md:p-8 h-[300px] md:h-[350px]">
@@ -292,10 +295,13 @@ const GoalTimeSimulator = () => {
       </div>
 
       <div className="flex flex-col gap-4 md:gap-6">
-        <div className="bento-card p-8 md:p-10 flex-1 bg-primary text-white flex flex-col justify-center items-center text-center">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Tempo Estimado</p>
-          <h2 className="text-4xl md:text-6xl font-black">{months} <span className="text-xl md:text-2xl font-bold opacity-60">meses</span></h2>
-          <p className="mt-2 md:mt-4 font-bold text-white/80 text-sm md:text-base">ou cerca de {years} anos</p>
+        <div className="bento-card p-8 md:p-10 flex-1 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-2xl shadow-emerald-200/50 relative overflow-hidden group flex flex-col justify-center items-center text-center">
+          <div className="relative z-10">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Tempo Estimado</p>
+            <h2 className="text-4xl md:text-6xl font-black">{months} <span className="text-xl md:text-2xl font-bold opacity-60">meses</span></h2>
+            <p className="mt-2 md:mt-4 font-bold text-white/80 text-sm md:text-base">ou cerca de {years} anos</p>
+          </div>
+          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl transition-transform group-hover:scale-150 duration-700"></div>
         </div>
         
         <div className="bento-card p-6 md:p-8 bg-slate-900 text-white">
@@ -352,7 +358,7 @@ const DebtSimulator = () => {
         </div>
       </div>
 
-      <div className={`bento-card p-8 md:p-10 flex flex-col justify-center items-center text-center transition-colors ${months === Infinity ? 'bg-rose-50 border-rose-200' : 'bg-rose-600 text-white'}`}>
+      <div className={`bento-card p-8 md:p-10 flex flex-col justify-center items-center text-center relative overflow-hidden group transition-all duration-500 ${months === Infinity ? 'bg-rose-50 border-rose-200' : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-2xl shadow-emerald-200/50'}`}>
         {months === Infinity ? (
           <>
             <ShieldAlert size={48} className="text-rose-500 mb-4" />
@@ -360,13 +366,15 @@ const DebtSimulator = () => {
             <p className="text-rose-500 text-xs md:text-sm mt-2">O seu pagamento mensal não cobre os juros. A dívida está a crescer.</p>
           </>
         ) : (
-          <>
+          <div className="relative z-10 w-full">
             <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Libertação Total em</p>
             <h2 className="text-4xl md:text-6xl font-black">{months} <span className="text-xl md:text-2xl font-bold opacity-60">meses</span></h2>
             <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-white/10 w-full">
-              <p className="text-[11px] md:text-xs font-medium text-white/70 leading-relaxed">Pagará um total de <span className="font-bold text-white truncate inline-block max-w-full">{(months * payment).toLocaleString()} Kz</span> até ao fim.</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">Montante Total Pago</p>
+              <p className="text-xl md:text-2xl font-bold text-white truncate">{(months * payment).toLocaleString()} <span className="text-xs font-normal opacity-60">Kz</span></p>
             </div>
-          </>
+            <div className="absolute -right-12 -bottom-12 w-40 h-40 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-700"></div>
+          </div>
         )}
       </div>
     </div>
