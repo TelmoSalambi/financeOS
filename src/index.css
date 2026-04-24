@@ -1,11 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #10B981;
+  --color-primary: #00D084;
   --color-primary-dark: #059669;
   --color-secondary: #0f172a;
   --color-background: #f8fafc;
   --color-negative: #fb7185;
+}
+
+.glass-effect {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 body {

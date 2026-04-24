@@ -137,12 +137,12 @@ const Login = () => {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-              <TrendingUp size={22} className="text-white" />
+            <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30">
+              <BarChart3 size={24} className="text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">FinanceOS</h1>
+            <h1 className="text-2xl font-black text-white tracking-tighter">Finance<span className="text-primary">OS</span></h1>
           </div>
-          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">Inteligência Financeira B2B2C</p>
+          <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.3em] mt-3">Inteligência Financeira</p>
         </div>
 
         <div className="relative z-10 max-w-lg">
@@ -166,10 +166,11 @@ const Login = () => {
         
         {/* Mobile Header (Only visible on small screens) */}
         <div className="lg:hidden flex flex-col items-center mb-6 mt-2">
-          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 mb-3">
-            <TrendingUp size={24} className="text-white" />
+          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/30 mb-4">
+            <BarChart3 size={32} className="text-white" />
           </div>
-          <h1 className="text-xl font-bold text-secondary tracking-tight">FinanceOS</h1>
+          <h1 className="text-2xl font-black text-secondary tracking-tighter">Finance<span className="text-primary">OS</span></h1>
+          <p className="text-slate-400 text-[8px] font-black uppercase tracking-[0.3em] mt-2">Inteligência Financeira</p>
         </div>
 
         <div className="w-full max-w-md bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white relative overflow-hidden">

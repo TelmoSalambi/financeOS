@@ -55,13 +55,14 @@ const Sidebar = ({ onNewTransaction, isMobile, mobileOpen, collapsed, onCloseMob
       {/* ── HEADER ── */}
       <div className={`shrink-0 flex items-center gap-3 p-4 ${collapsed && !isMobile ? 'justify-center px-2' : 'justify-between'}`}>
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 shrink-0 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-            <TrendingUp size={22} className="text-white" />
+          <div className="w-10 h-10 shrink-0 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30 relative overflow-hidden group">
+            <BarChart3 size={20} className="text-white relative z-10" />
+            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
           </div>
           {isExpanded && (
             <div className="min-w-0">
-              <h1 className="text-lg font-black tracking-tight truncate leading-tight">FinanceOS</h1>
-              <p className="text-[7px] font-black uppercase tracking-[0.15em] text-primary/60">Professional Edition</p>
+              <h1 className="text-xl font-black tracking-tighter truncate leading-none">Finance<span className="text-primary">OS</span></h1>
+              <p className="text-[7px] font-black uppercase tracking-[0.2em] text-slate-500 mt-1">Inteligência Financeira</p>
             </div>
           )}
         </div>
