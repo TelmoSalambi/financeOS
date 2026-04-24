@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   TrendingUp, 
+  BarChart3,
   Eye, 
   EyeOff, 
   ArrowRight, 
