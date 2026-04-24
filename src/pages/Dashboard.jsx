@@ -35,7 +35,6 @@ import {
   parseISO, 
   startOfMonth, 
   eachDayOfInterval, 
-  endOfMonth, 
   isSameDay, 
   subDays, 
   startOfWeek, 
@@ -44,6 +43,33 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import AIInsights from '../components/AIInsights';
+
+const ActivityItem = ({ icon: Icon, title, date, category, amount, isNegative }) => {
+  const IconComp = typeof Icon === 'string' ? Utensils : Icon;
+
+  return (
+    <div className="px-4 md:px-8 py-5 flex items-center justify-between hover:bg-slate-50 transition-all duration-300 cursor-pointer border-l-4 border-transparent hover:border-primary group">
+      <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
+        <div className={`w-10 h-10 md:w-12 md:h-12 shrink-0 rounded-xl md:rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${isNegative ? 'bg-slate-100 text-slate-500' : 'bg-primary/10 text-primary shadow-sm'}`}>
+          <IconComp size={20} className="md:w-6 md:h-6" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-bold text-secondary leading-tight truncate">{title}</p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
+            <span className="text-[9px] md:text-[10px] text-slate-400 font-bold uppercase tracking-widest whitespace-nowrap">{date}</span>
+            <div className="hidden xs:block w-1 h-1 bg-slate-300 rounded-full"></div>
+            <span className="text-[9px] md:text-[10px] text-primary font-bold uppercase tracking-widest truncate">{category}</span>
+          </div>
+        </div>
+      </div>
+      <div className="text-right shrink-0 pl-3">
+        <p className={`text-sm md:text-base font-bold ${isNegative ? 'text-negative' : 'text-primary'}`}>
+          {amount} <span className="text-[9px] md:text-[10px] font-normal opacity-70 ml-0.5">Kz</span>
+        </p>
+      </div>
+    </div>
+  );
+};
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -102,7 +128,7 @@ const Dashboard = () => {
         name: format(day, period === '1S' ? 'eee' : 'dd MMM', { locale: ptBR }),
         val: runningBalance
       };
-    }).filter((_, i, arr) => {
+    }).filter((_, i) => {
       if (period === '1Y') return i % 30 === 0;
       if (period === '3M') return i % 10 === 0;
       return true;
@@ -292,8 +318,8 @@ const Dashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 bento-card overflow-hidden !p-0 border-none shadow-xl shadow-slate-200/40">
-            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
-              <h3 className="text-xl font-bold text-secondary">Atividade Recente</h3>
+            <div className="px-4 md:px-8 py-5 md:py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+              <h3 className="text-lg md:text-xl font-bold text-secondary">Atividade Recente</h3>
               <Link to="/historico" className="text-primary text-sm font-bold hover:underline">Ver Histórico</Link>
             </div>
             
@@ -329,31 +355,5 @@ const Dashboard = () => {
   );
 };
 
-const ActivityItem = ({ icon: Icon, title, date, category, amount, isNegative }) => {
-  const IconComp = typeof Icon === 'string' ? Utensils : Icon;
-
-  return (
-    <div className="px-8 py-5 flex items-center justify-between hover:bg-slate-50 transition-all duration-300 cursor-pointer border-l-4 border-transparent hover:border-primary">
-      <div className="flex items-center gap-4">
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${isNegative ? 'bg-slate-100 text-slate-500' : 'bg-primary/10 text-primary shadow-sm'}`}>
-          <IconComp size={24} />
-        </div>
-        <div>
-          <p className="font-bold text-secondary leading-tight">{title}</p>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{date}</span>
-            <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-            <span className="text-[10px] text-primary font-bold uppercase tracking-widest">{category}</span>
-          </div>
-        </div>
-      </div>
-      <div className="text-right">
-        <p className={`text-base font-bold ${isNegative ? 'text-negative' : 'text-primary'}`}>
-          {amount} <span className="text-[10px] font-normal opacity-70 ml-0.5">Kz</span>
-        </p>
-      </div>
-    </div>
-  );
-};
 
 export default Dashboard;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Save, Calendar, Tag, FileText, Loader2, RefreshCw } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -10,38 +10,18 @@ const TransactionModal = ({ isOpen, onClose, editingTransaction = null }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [type, setType] = useState('expense');
+  const [type, setType] = useState(editingTransaction?.type || 'expense');
   const [loading, setLoading] = useState(false);
   const { categories } = useCategories(type);
   
   const [formData, setFormData] = useState({
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    category_id: '',
-    description: '',
-    recurrence: 'once'
+    amount: editingTransaction?.amount?.toString() || '',
+    date: editingTransaction?.date || new Date().toISOString().split('T')[0],
+    category_id: editingTransaction?.category_id || '',
+    description: editingTransaction?.description || '',
+    recurrence: editingTransaction?.recurrence || 'once'
   });
 
-  useEffect(() => {
-    if (editingTransaction) {
-      setType(editingTransaction.type);
-      setFormData({
-        amount: editingTransaction.amount.toString(),
-        date: editingTransaction.date,
-        category_id: editingTransaction.category_id,
-        description: editingTransaction.description || '',
-        recurrence: editingTransaction.recurrence || 'once'
-      });
-    } else {
-      setFormData({
-        amount: '',
-        date: new Date().toISOString().split('T')[0],
-        category_id: '',
-        description: '',
-        recurrence: 'once'
-      });
-    }
-  }, [editingTransaction, isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

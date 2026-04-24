@@ -1,7 +1,10 @@
 import React from 'react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
-const SummaryCard = ({ title, amount, percentage, type = 'neutral', icon: Icon, colorClass = 'primary' }) => {
+const SummaryCard = ({ title, amount, percentage, icon: Icon, colorClass = 'primary' }) => {
+  // Using Icon as a component is standard, but the linter might be confused.
+  // I'll ensure it's treated as used.
+  const IconComp = Icon;
   const isPositive = percentage > 0;
   
   const colors = {
@@ -22,7 +25,7 @@ const SummaryCard = ({ title, amount, percentage, type = 'neutral', icon: Icon, 
           </h3>
         </div>
         <div className={`p-2 rounded-lg ${colors[colorClass] || colors.neutral}`}>
-          <Icon size={20} />
+          <IconComp size={20} />
         </div>
       </div>
       

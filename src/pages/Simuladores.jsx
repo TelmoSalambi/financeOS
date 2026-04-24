@@ -40,33 +40,33 @@ const Simuladores = () => {
     <Layout title="Simuladores de Futuro">
       <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
         
-        <div className="mb-10 text-center max-w-2xl mx-auto">
-          <h1 className="text-4xl font-black text-secondary tracking-tight">Simuladores de Futuro</h1>
-          <p className="text-slate-500 mt-3 text-lg font-medium leading-relaxed">
-            Planeie a sua liberdade financeira com as ferramentas de simulação mais avançadas do mercado.
+        <div className="mb-8 md:mb-10 text-center max-w-2xl mx-auto">
+          <h1 className="text-2xl md:text-4xl font-black text-secondary tracking-tight px-4">Simuladores de Futuro</h1>
+          <p className="text-slate-500 mt-2 md:mt-3 text-sm md:text-lg font-medium leading-relaxed px-6">
+            Planeie a sua liberdade financeira com ferramentas de simulação avançadas.
           </p>
         </div>
 
-        {/* Tabs Navigation */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
+        {/* Tabs Navigation - Scrollable on mobile */}
+        <div className="flex overflow-x-auto no-scrollbar sm:flex-wrap sm:justify-center gap-2 md:gap-3 mb-8 md:mb-12 px-4 -mx-4 sm:mx-0">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-bold transition-all border-2 ${
+              className={`flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl font-bold transition-all border-2 shrink-0 ${
                 activeTab === tab.id 
-                  ? `border-transparent shadow-xl shadow-slate-200/50 ${tab.bg} ${tab.color}` 
+                  ? `border-transparent shadow-lg md:shadow-xl shadow-slate-200/50 ${tab.bg} ${tab.color}` 
                   : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'
               }`}
             >
-              <tab.icon size={20} />
-              <span className="text-sm">{tab.label}</span>
+              <tab.icon size={18} className="md:w-5 md:h-5" />
+              <span className="text-xs md:text-sm">{tab.label}</span>
             </button>
           ))}
         </div>
 
         {/* Simulator Content */}
-        <div className="min-h-[600px]">
+        <div className="min-h-[500px] md:min-h-[600px] px-4 md:px-0">
           {activeTab === 'reforma' && <RetirementSimulator />}
           {activeTab === 'juros' && <CompoundInterestSimulator />}
           {activeTab === 'fire' && <FireSimulator />}
@@ -100,9 +100,9 @@ const RetirementSimulator = () => {
   const finalBalance = data[data.length - 1]?.balance || 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-1 space-y-6">
-        <div className="bento-card p-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+      <div className="lg:col-span-1 space-y-4 md:space-y-6">
+        <div className="bento-card p-6 md:p-8">
           <h3 className="font-bold text-secondary mb-6 flex items-center gap-2">
             <Calculator size={18} className="text-emerald-500" /> Parâmetros
           </h3>
@@ -111,32 +111,32 @@ const RetirementSimulator = () => {
             <InputRange label="Idade de Reforma" value={inputs.retirementAge} min={inputs.age + 1} max={100} onChange={v => setInputs({...inputs, retirementAge: v})} suffix="anos" />
             <InputAmount label="Salário Mensal" value={inputs.salary} onChange={v => setInputs({...inputs, salary: v})} />
             <InputRange label="% de Poupança" value={inputs.savingsRate} min={1} max={90} onChange={v => setInputs({...inputs, savingsRate: v})} suffix="%" />
-            <InputRange label="Retorno Anual Esperado" value={inputs.returnRate} min={1} max={25} onChange={v => setInputs({...inputs, returnRate: v})} suffix="%" />
+            <InputRange label="Retorno Anual" value={inputs.returnRate} min={1} max={25} onChange={v => setInputs({...inputs, returnRate: v})} suffix="%" />
           </div>
         </div>
       </div>
 
-      <div className="lg:col-span-2 space-y-6">
-        <div className="bento-card p-10 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-2xl shadow-emerald-200/50 relative overflow-hidden group">
+      <div className="lg:col-span-2 space-y-4 md:space-y-6">
+        <div className="bento-card p-6 md:p-10 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-2xl shadow-emerald-200/50 relative overflow-hidden group">
           <div className="relative z-10">
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-2">Património Acumulado na Reforma</p>
-            <h2 className="text-5xl font-black">{finalBalance.toLocaleString('pt-BR')} <span className="text-xl font-normal opacity-60">Kz</span></h2>
-            <div className="mt-8 grid grid-cols-2 gap-8 border-t border-white/10 pt-8">
+            <h2 className="text-3xl md:text-5xl font-black truncate">{finalBalance.toLocaleString('pt-BR')} <span className="text-sm md:text-xl font-normal opacity-60">Kz</span></h2>
+            <div className="mt-6 md:mt-8 grid grid-cols-2 gap-4 md:gap-8 border-t border-white/10 pt-6 md:pt-8">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Tempo de Acumulação</p>
-                <p className="text-xl font-bold">{inputs.retirementAge - inputs.age} Anos</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Tempo</p>
+                <p className="text-lg md:text-xl font-bold">{inputs.retirementAge - inputs.age} Anos</p>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Poupança Mensal</p>
-                <p className="text-xl font-bold">{(inputs.salary * (inputs.savingsRate/100)).toLocaleString('pt-BR')} Kz</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Poupança</p>
+                <p className="text-lg md:text-xl font-bold truncate">{(inputs.salary * (inputs.savingsRate/100)).toLocaleString('pt-BR')} Kz</p>
               </div>
             </div>
           </div>
           <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-700"></div>
         </div>
 
-        <div className="bento-card p-8 h-[350px]">
-          <h3 className="font-bold text-secondary mb-6">Projecção de Crescimento</h3>
+        <div className="bento-card p-6 md:p-8 h-[300px] md:h-[350px]">
+          <h3 className="font-bold text-secondary mb-6 text-sm md:text-base">Projecção de Crescimento</h3>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
               <defs>
@@ -146,10 +146,10 @@ const RetirementSimulator = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+              <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8' }} />
               <YAxis hide />
               <Tooltip 
-                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}
+                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}
                 formatter={(v) => [`${v.toLocaleString()} Kz`, 'Património']}
               />
               <Area type="monotone" dataKey="balance" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorBalance)" />
@@ -182,41 +182,41 @@ const CompoundInterestSimulator = () => {
   const total = data[data.length - 1]?.total || 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-1 bento-card p-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+      <div className="lg:col-span-1 bento-card p-6 md:p-8">
         <h3 className="font-bold text-secondary mb-6 flex items-center gap-2">
           <TrendingUp size={18} className="text-blue-500" /> Variáveis
         </h3>
         <div className="space-y-6">
           <InputAmount label="Capital Inicial" value={inputs.initial} onChange={v => setInputs({...inputs, initial: v})} />
           <InputAmount label="Aporte Mensal" value={inputs.monthly} onChange={v => setInputs({...inputs, monthly: v})} />
-          <InputRange label="Período (Anos)" value={inputs.years} min={1} max={50} onChange={v => setInputs({...inputs, years: v})} suffix="anos" />
-          <InputRange label="Taxa Anual (%)" value={inputs.rate} min={1} max={40} onChange={v => setInputs({...inputs, rate: v})} suffix="%" />
+          <InputRange label="Período" value={inputs.years} min={1} max={50} onChange={v => setInputs({...inputs, years: v})} suffix="anos" />
+          <InputRange label="Taxa Anual" value={inputs.rate} min={1} max={40} onChange={v => setInputs({...inputs, rate: v})} suffix="%" />
         </div>
       </div>
 
-      <div className="lg:col-span-2 space-y-6">
-        <div className="bento-card p-10 bg-blue-600 text-white border-none shadow-2xl shadow-blue-200/50">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Valor Estimado após {inputs.years} anos</p>
-          <h2 className="text-5xl font-black">{total.toLocaleString('pt-BR')} <span className="text-xl font-normal opacity-60">Kz</span></h2>
-          <div className="mt-8 flex gap-12">
+      <div className="lg:col-span-2 space-y-4 md:space-y-6">
+        <div className="bento-card p-6 md:p-10 bg-blue-600 text-white border-none shadow-2xl shadow-blue-200/50">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Estimativa em {inputs.years} anos</p>
+          <h2 className="text-3xl md:text-5xl font-black truncate">{total.toLocaleString('pt-BR')} <span className="text-sm md:text-xl font-normal opacity-60">Kz</span></h2>
+          <div className="mt-6 md:mt-8 flex flex-col sm:flex-row gap-6 md:gap-12">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Total Investido</p>
-              <p className="text-xl font-bold">{(inputs.initial + (inputs.monthly * 12 * inputs.years)).toLocaleString('pt-BR')} Kz</p>
+              <p className="text-lg md:text-xl font-bold truncate">{(inputs.initial + (inputs.monthly * 12 * inputs.years)).toLocaleString('pt-BR')} Kz</p>
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Ganhos em Juros</p>
-              <p className="text-xl font-bold text-emerald-300">{(total - (inputs.initial + (inputs.monthly * 12 * inputs.years))).toLocaleString('pt-BR')} Kz</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Ganhos Juros</p>
+              <p className="text-lg md:text-xl font-bold text-emerald-300 truncate">{(total - (inputs.initial + (inputs.monthly * 12 * inputs.years))).toLocaleString('pt-BR')} Kz</p>
             </div>
           </div>
         </div>
 
-        <div className="bento-card p-8 h-[350px]">
-          <h3 className="font-bold text-secondary mb-6">Aceleração de Capital</h3>
+        <div className="bento-card p-6 md:p-8 h-[300px] md:h-[350px]">
+          <h3 className="font-bold text-secondary mb-6 text-sm md:text-base">Aceleração de Capital</h3>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+              <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8' }} />
               <YAxis hide />
               <Tooltip formatter={v => [`${v.toLocaleString()} Kz`]} />
               <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={4} dot={false} />
@@ -234,32 +234,32 @@ const FireSimulator = () => {
   const fireNumber = expense * 12 * 25; // Rule of 25 (4% rule)
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <div className="bento-card p-10 text-center">
-        <Flame size={48} className="mx-auto text-orange-500 mb-6" />
-        <h3 className="text-2xl font-bold text-secondary mb-2">Qual o seu Número FIRE?</h3>
-        <p className="text-slate-500 text-sm mb-10">O montante necessário para viver dos seus investimentos para sempre.</p>
+    <div className="max-w-3xl mx-auto space-y-6 md:space-y-8">
+      <div className="bento-card p-6 md:p-10 text-center">
+        <Flame size={48} className="mx-auto text-orange-500 mb-4 md:mb-6" />
+        <h3 className="text-xl md:text-2xl font-bold text-secondary mb-2">Qual o seu Número FIRE?</h3>
+        <p className="text-slate-500 text-xs md:text-sm mb-8 md:mb-10">O montante necessário para viver dos seus investimentos para sempre.</p>
         
-        <div className="max-w-sm mx-auto mb-10">
+        <div className="max-w-xs md:max-w-sm mx-auto mb-8 md:mb-10">
           <InputAmount label="Despesa Mensal Desejada" value={expense} onChange={setExpense} />
         </div>
 
-        <div className="p-8 bg-orange-50 border-2 border-orange-100 rounded-[2.5rem]">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400 mb-2">O Seu Número de Independência</p>
-          <h2 className="text-6xl font-black text-orange-600">{fireNumber.toLocaleString('pt-BR')} <span className="text-2xl font-bold opacity-60">Kz</span></h2>
+        <div className="p-6 md:p-8 bg-orange-50 border-2 border-orange-100 rounded-3xl md:rounded-[2.5rem]">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400 mb-2">Independência Financeira</p>
+          <h2 className="text-3xl md:text-6xl font-black text-orange-600 truncate">{fireNumber.toLocaleString('pt-BR')} <span className="text-sm md:text-2xl font-bold opacity-60">Kz</span></h2>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-          <div className="p-6 bg-slate-50 rounded-2xl">
-            <h4 className="font-bold text-secondary flex items-center gap-2 mb-2"><Info size={16} /> Regra dos 4%</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Baseia-se na teoria de que se retirar 4% do seu património anualmente, o dinheiro durará pelo menos 30 anos (ou eternamente se o retorno for superior à inflação).
+        <div className="mt-8 md:mt-10 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-left">
+          <div className="p-5 md:p-6 bg-slate-50 rounded-2xl">
+            <h4 className="font-bold text-secondary flex items-center gap-2 mb-2 text-sm"><Info size={16} /> Regra dos 4%</h4>
+            <p className="text-[11px] md:text-xs text-slate-500 leading-relaxed">
+              Baseia-se na teoria de que se retirar 4% do seu património anualmente, o dinheiro durará décadas.
             </p>
           </div>
-          <div className="p-6 bg-slate-50 rounded-2xl">
-            <h4 className="font-bold text-secondary flex items-center gap-2 mb-2"><TrendingUp size={16} /> Acelere o Processo</h4>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Quanto mais baixa for a sua despesa mensal, mais rápido atingirá o seu número FIRE. O foco deve ser aumentar o aporte e reduzir o estilo de vida.
+          <div className="p-5 md:p-6 bg-slate-50 rounded-2xl">
+            <h4 className="font-bold text-secondary flex items-center gap-2 mb-2 text-sm"><TrendingUp size={16} /> Acelere o Processo</h4>
+            <p className="text-[11px] md:text-xs text-slate-500 leading-relaxed">
+              Quanto mais baixa for a sua despesa mensal, mais rápido atingirá o seu número FIRE.
             </p>
           </div>
         </div>
@@ -277,38 +277,38 @@ const GoalTimeSimulator = () => {
   const years = (months / 12).toFixed(1);
 
   return (
-    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-      <div className="bento-card p-10">
-        <h3 className="text-xl font-bold text-secondary mb-8">Defina o Objetivo</h3>
+    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+      <div className="bento-card p-6 md:p-10">
+        <h3 className="text-lg md:text-xl font-bold text-secondary mb-8">Defina o Objetivo</h3>
         <div className="space-y-6">
-          <InputAmount label="Valor da Meta (ex: Carro, Viagem)" value={inputs.target} onChange={v => setInputs({...inputs, target: v})} />
-          <InputAmount label="Valor que já tem guardado" value={inputs.current} onChange={v => setInputs({...inputs, current: v})} />
-          <InputAmount label="Quanto consegue guardar p/ mês" value={inputs.monthly} onChange={v => setInputs({...inputs, monthly: v})} />
+          <InputAmount label="Valor da Meta" value={inputs.target} onChange={v => setInputs({...inputs, target: v})} />
+          <InputAmount label="Valor que já tem" value={inputs.current} onChange={v => setInputs({...inputs, current: v})} />
+          <InputAmount label="Poupança p/ mês" value={inputs.monthly} onChange={v => setInputs({...inputs, monthly: v})} />
         </div>
       </div>
 
-      <div className="flex flex-col gap-6">
-        <div className="bento-card p-10 flex-1 bg-primary text-white flex flex-col justify-center items-center text-center">
+      <div className="flex flex-col gap-4 md:gap-6">
+        <div className="bento-card p-8 md:p-10 flex-1 bg-primary text-white flex flex-col justify-center items-center text-center">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Tempo Estimado</p>
-          <h2 className="text-6xl font-black">{months} <span className="text-2xl font-bold opacity-60">meses</span></h2>
-          <p className="mt-4 font-bold text-white/80">ou cerca de {years} anos</p>
+          <h2 className="text-4xl md:text-6xl font-black">{months} <span className="text-xl md:text-2xl font-bold opacity-60">meses</span></h2>
+          <p className="mt-2 md:mt-4 font-bold text-white/80 text-sm md:text-base">ou cerca de {years} anos</p>
         </div>
         
-        <div className="bento-card p-8 bg-slate-900 text-white">
-          <h4 className="font-bold mb-4">Análise de Progresso</h4>
+        <div className="bento-card p-6 md:p-8 bg-slate-900 text-white">
+          <h4 className="font-bold mb-4 text-sm md:text-base">Análise de Progresso</h4>
           <div className="space-y-4">
-            <div className="flex justify-between text-xs">
+            <div className="flex justify-between text-[11px] md:text-xs">
               <span className="text-slate-400">Total Necessário</span>
-              <span className="font-bold">{inputs.target.toLocaleString()} Kz</span>
+              <span className="font-bold truncate ml-2">{inputs.target.toLocaleString()} Kz</span>
             </div>
-            <div className="flex justify-between text-xs">
+            <div className="flex justify-between text-[11px] md:text-xs">
               <span className="text-slate-400">Falta Acumular</span>
-              <span className="font-bold text-rose-400">{remaining.toLocaleString()} Kz</span>
+              <span className="font-bold text-rose-400 truncate ml-2">{remaining.toLocaleString()} Kz</span>
             </div>
             <div className="h-2 bg-white/10 rounded-full overflow-hidden mt-2">
               <div 
                 className="h-full bg-primary transition-all duration-1000" 
-                style={{ width: `${(inputs.current / inputs.target) * 100}%` }}
+                style={{ width: `${Math.min(100, (inputs.current / inputs.target) * 100)}%` }}
               />
             </div>
           </div>
@@ -338,29 +338,29 @@ const DebtSimulator = () => {
   }, [debt, interest, payment]);
 
   return (
-    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-      <div className="bento-card p-10">
-        <h3 className="text-xl font-bold text-secondary mb-8">Detalhes da Dívida</h3>
+    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+      <div className="bento-card p-6 md:p-10">
+        <h3 className="text-lg md:text-xl font-bold text-secondary mb-8">Detalhes da Dívida</h3>
         <div className="space-y-6">
-          <InputAmount label="Saldo Devedor Total" value={debt} onChange={setDebt} />
-          <InputRange label="Taxa de Juro Anual (%)" value={interest} min={1} max={60} onChange={setInterest} suffix="%" />
+          <InputAmount label="Saldo Devedor" value={debt} onChange={setDebt} />
+          <InputRange label="Taxa de Juro" value={interest} min={1} max={60} onChange={setInterest} suffix="%" />
           <InputAmount label="Pagamento Mensal" value={payment} onChange={setPayment} />
         </div>
       </div>
 
-      <div className={`bento-card p-10 flex flex-col justify-center items-center text-center transition-colors ${months === Infinity ? 'bg-rose-50 border-rose-200' : 'bg-rose-600 text-white'}`}>
+      <div className={`bento-card p-8 md:p-10 flex flex-col justify-center items-center text-center transition-colors ${months === Infinity ? 'bg-rose-50 border-rose-200' : 'bg-rose-600 text-white'}`}>
         {months === Infinity ? (
           <>
             <ShieldAlert size={48} className="text-rose-500 mb-4" />
-            <h4 className="text-rose-600 font-bold text-xl">Atenção!</h4>
-            <p className="text-rose-500 text-sm mt-2">O seu pagamento mensal não cobre sequer os juros. A dívida está a crescer.</p>
+            <h4 className="text-rose-600 font-bold text-lg md:text-xl">Atenção!</h4>
+            <p className="text-rose-500 text-xs md:text-sm mt-2">O seu pagamento mensal não cobre os juros. A dívida está a crescer.</p>
           </>
         ) : (
           <>
             <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Libertação Total em</p>
-            <h2 className="text-6xl font-black">{months} <span className="text-2xl font-bold opacity-60">meses</span></h2>
-            <div className="mt-8 pt-8 border-t border-white/10 w-full">
-              <p className="text-xs font-medium text-white/70">Pagará um total de <span className="font-bold text-white">{(months * payment).toLocaleString()} Kz</span> até ao fim.</p>
+            <h2 className="text-4xl md:text-6xl font-black">{months} <span className="text-xl md:text-2xl font-bold opacity-60">meses</span></h2>
+            <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-white/10 w-full">
+              <p className="text-[11px] md:text-xs font-medium text-white/70 leading-relaxed">Pagará um total de <span className="font-bold text-white truncate inline-block max-w-full">{(months * payment).toLocaleString()} Kz</span> até ao fim.</p>
             </div>
           </>
         )}

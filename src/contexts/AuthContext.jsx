@@ -10,6 +10,11 @@ export const AuthProvider = ({ children }) => {
   const [ready, setReady] = useState(false);
   
   const initialized = useRef(false);
+  const userRef = useRef(user);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const fetchProfile = async (userId) => {
     if (!userId) return null;
@@ -53,7 +58,7 @@ export const AuthProvider = ({ children }) => {
         
         const newUser = session?.user ?? null;
         
-        if (newUser?.id !== user?.id) {
+        if (newUser?.id !== userRef.current?.id) {
           setUser(newUser);
           if (newUser) {
             const p = await fetchProfile(newUser.id);
@@ -148,4 +153,5 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

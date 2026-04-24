@@ -44,7 +44,7 @@ const Login = () => {
     try {
       // Direct redirect for speed
       await signInWithGoogle();
-    } catch (err) {
+    } catch {
       if (isMounted.current) {
         setError('Falha ao iniciar login com Google. Tente novamente.');
         setLoading(false);
@@ -93,7 +93,7 @@ const Login = () => {
           setError(errorMsg || 'Erro inesperado. Tente novamente.');
         }
       }
-    } catch (err) {
+    } catch {
       if (isMounted.current) setError('Erro de conexão. Verifique a internet.');
     } finally {
       if (isMounted.current && !success) setLoading(false);

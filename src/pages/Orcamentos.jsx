@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import { useFinancialStats } from '../hooks/useFinancialStats';
 import { useCategories } from '../hooks/useCategories';
@@ -9,23 +9,27 @@ import { toast } from 'sonner';
 
 const Orcamentos = () => {
   const { user } = useAuth();
-  const { transactions, refetch: refetchStats } = useFinancialStats();
+  const { transactions } = useFinancialStats();
   const { categories } = useCategories('expense');
   const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
 
-  const fetchBudgets = async () => {
+  const fetchBudgets = useCallback(async () => {
+    if (!user?.id) return;
     setLoading(true);
-    const { data } = await supabase.from('budgets').select('*').eq('user_id', user?.id);
+    const { data } = await supabase.from('budgets').select('*').eq('user_id', user.id);
     setBudgets(data || []);
     setLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
-    if (user) fetchBudgets();
-  }, [user]);
+    const timer = setTimeout(() => {
+      fetchBudgets();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchBudgets]);
 
   // Calculate consumption for each budget
   const budgetStatus = useMemo(() => {
@@ -64,14 +68,14 @@ const Orcamentos = () => {
     <Layout title="Orçamentos">
       <div className="max-w-6xl mx-auto">
         
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 px-4 md:px-0">
           <div>
-            <h1 className="text-3xl font-bold text-secondary">Orçamentos</h1>
-            <p className="text-slate-500 mt-1">Defina limites para as suas categorias de gasto.</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-secondary">Orçamentos</h1>
+            <p className="text-slate-500 mt-1 text-sm md:text-base">Defina limites para as suas categorias de gasto.</p>
           </div>
           <button 
             onClick={() => { setEditingBudget(null); setIsModalOpen(true); }}
-            className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all active:scale-95"
+            className="flex items-center justify-center gap-2 px-6 py-3.5 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] md:hover:scale-105 transition-all active:scale-95 w-full md:w-auto"
           >
             <Plus size={20} />
             Definir Orçamento
@@ -83,25 +87,27 @@ const Orcamentos = () => {
             <Loader2 className="animate-spin text-primary" size={40} />
           </div>
         ) : budgetStatus.length === 0 ? (
-          <div className="bento-card py-20 flex flex-col items-center text-center gap-4">
-            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
-              <PieChart size={40} />
-            </div>
-            <div>
-              <p className="font-bold text-secondary text-lg">Ainda não definiu orçamentos</p>
-              <p className="text-sm text-slate-400">Crie limites mensais para controlar melhor os seus gastos por categoria.</p>
+          <div className="px-4">
+            <div className="bento-card py-20 flex flex-col items-center text-center gap-4">
+              <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-300">
+                <PieChart size={40} />
+              </div>
+              <div>
+                <p className="font-bold text-secondary text-lg">Ainda não definiu orçamentos</p>
+                <p className="text-sm text-slate-400">Crie limites mensais para controlar melhor os seus gastos.</p>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 px-4 md:px-0">
             {budgetStatus.map(b => (
-              <div key={b.id} className={`bento-card group hover:border-primary/30 transition-all ${b.isDanger ? 'border-negative/30 bg-negative/5' : ''}`}>
+              <div key={b.id} className={`bento-card group hover:border-primary/30 transition-all ${b.isDanger ? 'border-negative/30 bg-negative/5' : ''} p-6 md:p-8`}>
                 <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="font-bold text-secondary">{b.categoryName}</h3>
-                    <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{b.month}</p>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-secondary truncate">{b.categoryName}</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{b.month}</p>
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onClick={() => { setEditingBudget(b); setIsModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-primary hover:bg-white rounded-lg transition-all"><Edit3 size={14} /></button>
                     <button onClick={() => handleDelete(b.id)} className="p-1.5 text-slate-400 hover:text-negative hover:bg-white rounded-lg transition-all"><Trash2 size={14} /></button>
                   </div>
@@ -109,11 +115,11 @@ const Orcamentos = () => {
 
                 <div className="space-y-4">
                   <div className="flex justify-between items-end">
-                    <p className="text-2xl font-bold text-secondary">{b.spent.toLocaleString('pt-BR')} <span className="text-sm font-normal text-slate-400">Kz</span></p>
-                    <p className="text-sm font-bold text-slate-500">alvo: {b.amount.toLocaleString('pt-BR')} Kz</p>
+                    <p className="text-xl md:text-2xl font-bold text-secondary truncate">{b.spent.toLocaleString('pt-BR')} <span className="text-xs md:text-sm font-normal text-slate-400">Kz</span></p>
+                    <p className="text-[10px] md:text-sm font-bold text-slate-500 shrink-0 ml-2">alvo: {b.amount.toLocaleString('pt-BR')} Kz</p>
                   </div>
 
-                  <div className="h-3 bg-slate-100 rounded-full overflow-hidden relative">
+                  <div className="h-2 md:h-3 bg-slate-100 rounded-full overflow-hidden relative">
                     <div 
                       className={`h-full rounded-full transition-all duration-1000 ${
                         b.isDanger ? 'bg-negative' : b.isWarning ? 'bg-amber-400' : 'bg-primary'
@@ -123,7 +129,7 @@ const Orcamentos = () => {
                   </div>
 
                   <div className="flex justify-between items-center">
-                    <span className={`text-[10px] font-bold uppercase tracking-widest ${b.isDanger ? 'text-negative' : b.isWarning ? 'text-amber-500' : 'text-primary'}`}>
+                    <span className={`text-[9px] md:text-[10px] font-bold uppercase tracking-widest ${b.isDanger ? 'text-negative' : b.isWarning ? 'text-amber-500' : 'text-primary'}`}>
                       {b.percent.toFixed(0)}% Utilizado
                     </span>
                     {b.isDanger && <AlertTriangle size={14} className="text-negative animate-pulse" />}

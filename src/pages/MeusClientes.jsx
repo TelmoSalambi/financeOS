@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import { 
   Users, 
@@ -28,13 +28,14 @@ const MeusClientes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchClients = async () => {
+  const fetchClients = useCallback(async () => {
+    if (!user?.id) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('client_relationships')
         .select('*')
-        .eq('business_id', user?.id)
+        .eq('business_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -44,11 +45,14 @@ const MeusClientes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
-    if (user) fetchClients();
-  }, [user]);
+    const timer = setTimeout(() => {
+      fetchClients();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchClients]);
 
   const filteredClients = (clients || []).filter(c => 
     c.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -59,21 +63,21 @@ const MeusClientes = () => {
     <Layout title="Portal Profissional">
       <div className="max-w-7xl mx-auto animate-in fade-in duration-700">
         
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-12 gap-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 md:mb-12 gap-6">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-secondary/10 text-secondary rounded-lg">
-                <Briefcase size={20} />
+                <Briefcase size={18} className="md:w-5 md:h-5" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Escritório de Contabilidade</span>
+              <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Escritório de Contabilidade</span>
             </div>
-            <h1 className="text-4xl font-black text-secondary tracking-tight">Meus Clientes</h1>
-            <p className="text-slate-500 mt-2 text-lg font-medium">Faça a gestão financeira estratégica do seu portfólio.</p>
+            <h1 className="text-3xl md:text-4xl font-black text-secondary tracking-tight">Meus Clientes</h1>
+            <p className="text-slate-500 mt-2 text-base md:text-lg font-medium">Faça a gestão financeira estratégica do seu portfólio.</p>
           </div>
           
           <button 
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-3 px-8 py-4 bg-secondary text-white font-extrabold rounded-2xl shadow-2xl shadow-secondary/20 hover:scale-105 hover:bg-slate-800 transition-all active:scale-95 shrink-0"
+            className="flex items-center justify-center gap-3 px-6 md:px-8 py-3.5 md:py-4 bg-secondary text-white font-extrabold rounded-2xl shadow-2xl shadow-secondary/20 hover:scale-105 hover:bg-slate-800 transition-all active:scale-95 shrink-0 w-full lg:w-auto"
           >
             <Plus size={22} />
             Convidar Novo Cliente
@@ -81,35 +85,36 @@ const MeusClientes = () => {
         </div>
 
         {/* Stats Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bento-card bg-slate-50 border-none p-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-10 md:mb-12">
+          <div className="bento-card bg-slate-50 border-none p-6 md:p-8">
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Total de Clientes</p>
-            <h3 className="text-3xl font-black text-secondary">{clients.length}</h3>
+            <h3 className="text-2xl md:text-3xl font-black text-secondary">{clients.length}</h3>
           </div>
-          <div className="bento-card bg-emerald-50 border-none p-8">
+          <div className="bento-card bg-emerald-50 border-none p-6 md:p-8">
             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2">Clientes Ativos</p>
-            <h3 className="text-3xl font-black text-emerald-600">{clients.filter(c => c.status === 'active').length}</h3>
+            <h3 className="text-2xl md:text-3xl font-black text-emerald-600">{clients.filter(c => c.status === 'active').length}</h3>
           </div>
-          <div className="bento-card bg-amber-50 border-none p-8">
+          <div className="bento-card bg-amber-50 border-none p-6 md:p-8 sm:col-span-2 md:col-span-1">
             <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-2">Convites Pendentes</p>
-            <h3 className="text-3xl font-black text-amber-600">{clients.filter(c => c.status === 'pending').length}</h3>
+            <h3 className="text-2xl md:text-3xl font-black text-amber-600">{clients.filter(c => c.status === 'pending').length}</h3>
           </div>
         </div>
 
         {/* Search & Filter */}
-        <div className="flex gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-8">
           <div className="flex-1 relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-secondary transition-colors" size={20} />
             <input 
               type="text" 
-              placeholder="Pesquisar por nome ou email do cliente..." 
+              placeholder="Pesquisar cliente..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-4 bg-white border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-secondary/5 focus:border-secondary/20 outline-none transition-all shadow-sm"
+              className="w-full pl-12 pr-4 py-3.5 md:py-4 bg-white border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-secondary/5 focus:border-secondary/20 outline-none transition-all shadow-sm"
             />
           </div>
-          <button className="p-4 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-secondary hover:border-slate-200 transition-all shadow-sm">
+          <button className="p-3.5 md:p-4 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-secondary hover:border-slate-200 transition-all shadow-sm flex items-center justify-center">
             <Filter size={20} />
+            <span className="sm:hidden ml-2 font-bold text-sm">Filtros</span>
           </button>
         </div>
 

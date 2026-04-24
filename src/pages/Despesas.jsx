@@ -58,7 +58,7 @@ const Despesas = ({ onEdit }) => {
           </div>
         </div>
 
-        <div className="bento-card mb-6 flex flex-col lg:flex-row gap-4 p-4">
+        <div className="bento-card mb-8 flex flex-col md:flex-row gap-4 p-4 md:p-6">
           <div className="relative flex-1 group">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-negative/60 transition-colors" />
             <input
@@ -91,7 +91,8 @@ const Despesas = ({ onEdit }) => {
         </div>
 
         <div className="bento-card !p-0 overflow-hidden border-none shadow-xl shadow-slate-200/40">
-          <div className="px-8 py-5 border-b border-slate-100 bg-slate-50/50">
+          {/* Header - Hidden on Mobile */}
+          <div className="hidden md:block px-8 py-5 border-b border-slate-100 bg-slate-50/50">
             <div className="grid grid-cols-12 gap-4">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 col-span-2">Data</span>
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 col-span-5">Descrição</span>
@@ -118,36 +119,56 @@ const Despesas = ({ onEdit }) => {
           ) : (
             <div className="divide-y divide-slate-100">
               {despesas.map(t => (
-                <div key={t.id} className="px-8 py-5 grid grid-cols-12 gap-4 items-center hover:bg-slate-50/80 transition-colors group">
-                  <span className="text-sm font-medium text-slate-500 col-span-2">
+                <div key={t.id} className="px-4 md:px-8 py-5 flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 items-start md:items-center hover:bg-slate-50/80 transition-colors group relative">
+                  {/* Mobile Date & Category */}
+                  <div className="flex md:hidden items-center justify-between w-full mb-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {format(parseISO(t.date), "dd MMM, yyyy", { locale: ptBR })}
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-600 uppercase">
+                      {t.categories?.name || 'Diversos'}
+                    </span>
+                  </div>
+
+                  {/* Desktop Date */}
+                  <span className="hidden md:block text-sm font-medium text-slate-500 col-span-2">
                     {format(parseISO(t.date), "dd MMM, yyyy", { locale: ptBR })}
                   </span>
-                  <span className="text-sm font-bold text-secondary col-span-5 truncate">
+
+                  {/* Description */}
+                  <span className="text-sm font-bold text-secondary md:col-span-5 truncate w-full md:w-auto">
                     {t.description || '—'}
                   </span>
-                  <div className="col-span-2">
+
+                  {/* Desktop Category */}
+                  <div className="hidden md:block md:col-span-2">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 uppercase">
                       {t.categories?.name || 'Diversos'}
                     </span>
                   </div>
-                  <span className="text-base font-bold text-negative col-span-2 text-right">
-                    -{Number(t.amount).toLocaleString('pt-BR')} <span className="text-[10px] font-normal">Kz</span>
+
+                  {/* Value */}
+                  <span className="text-lg md:text-base font-bold text-negative md:col-span-2 md:text-right w-full md:w-auto flex justify-between md:block">
+                    <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center">Valor</span>
+                    <span>-{Number(t.amount).toLocaleString('pt-BR')} <span className="text-[10px] font-normal">Kz</span></span>
                   </span>
-                  <div className="flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                  {/* Actions */}
+                  <div className="flex justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity w-full md:w-auto md:justify-center border-t md:border-none pt-3 md:pt-0 mt-2 md:mt-0">
                     <button
                       onClick={() => onEdit(t)}
-                      className="p-2 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-lg transition-all"
+                      className="p-2.5 md:p-2 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-xl transition-all bg-slate-50 md:bg-transparent"
                       title="Editar"
                     >
-                      <Edit3 size={16} />
+                      <Edit3 size={18} className="md:w-4 md:h-4" />
                     </button>
                     <button
                       onClick={() => handleDelete(t.id)}
                       disabled={deleting === t.id}
-                      className="p-2 text-slate-400 hover:text-negative hover:bg-negative/5 rounded-lg transition-all"
+                      className="p-2.5 md:p-2 text-slate-400 hover:text-negative hover:bg-negative/5 rounded-xl transition-all bg-slate-50 md:bg-transparent"
                       title="Eliminar"
                     >
-                      {deleting === t.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                      {deleting === t.id ? <Loader2 size={18} className="animate-spin md:w-4 md:h-4" /> : <Trash2 size={18} className="md:w-4 md:h-4" />}
                     </button>
                   </div>
                 </div>
@@ -156,11 +177,11 @@ const Despesas = ({ onEdit }) => {
           )}
 
           {despesas.length > 0 && (
-            <div className="px-8 py-6 bg-slate-50/30 flex justify-between items-center">
-              <p className="text-xs font-semibold text-slate-400">Total de {despesas.length} registos</p>
-              <div className="text-right">
+            <div className="px-4 md:px-8 py-6 bg-slate-50/30 flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-xs font-semibold text-slate-400 order-2 md:order-1">Total de {despesas.length} registos</p>
+              <div className="text-center md:text-right order-1 md:order-2 w-full md:w-auto">
                 <p className="text-xs font-bold uppercase text-slate-400 tracking-wider">Total Filtrado</p>
-                <p className="text-xl font-bold text-negative">
+                <p className="text-2xl md:text-xl font-bold text-negative">
                   -{despesas.reduce((s, t) => s + Number(t.amount), 0).toLocaleString('pt-BR')} Kz
                 </p>
               </div>

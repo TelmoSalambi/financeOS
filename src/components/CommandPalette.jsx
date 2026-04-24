@@ -14,12 +14,10 @@ import {
   LogOut,
   X
 } from 'lucide-react';
-import { useFinancialStats } from '../hooks/useFinancialStats';
 import { useAuth } from '../contexts/AuthContext';
 
 const CommandPalette = ({ open, setOpen, onNewTransaction }) => {
   const navigate = useNavigate();
-  const { transactions } = useFinancialStats();
   const { signOut } = useAuth();
   const [search, setSearch] = useState('');
 

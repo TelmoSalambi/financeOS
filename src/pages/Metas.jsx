@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Layout from '../components/Layout';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,16 +14,20 @@ const Metas = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState(null);
 
-  const fetchGoals = async () => {
+  const fetchGoals = useCallback(async () => {
+    if (!user?.id) return;
     setLoading(true);
-    const { data } = await supabase.from('goals').select('*').eq('user_id', user?.id).order('created_at', { ascending: false });
+    const { data } = await supabase.from('goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
     setGoals(data || []);
     setLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
-    if (user) fetchGoals();
-  }, [user]);
+    const timer = setTimeout(() => {
+      fetchGoals();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [fetchGoals]);
 
   const handleDelete = async (id) => {
     if (!confirm('Eliminar esta meta?')) return;
@@ -67,7 +71,7 @@ const Metas = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {goals.map(goal => {
               const percent = (goal.current_amount / goal.target_amount) * 100;
               const remaining = goal.target_amount - goal.current_amount;
@@ -199,7 +203,7 @@ const GoalModal = ({ onClose, onSave, editing, userId }) => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-2 ml-1">Valor Alvo (Kz)</label>
               <input 
