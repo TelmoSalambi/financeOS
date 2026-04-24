@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import Layout from '../components/Layout';
 import { useFinancialStats } from '../hooks/useFinancialStats';
+import { useIsMobile } from '../hooks/useIsMobile';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
@@ -24,6 +25,7 @@ const StatCard = ({ label, value, color }) => (
 const Relatorios = () => {
   const { transactions, balance, totalIncome, totalExpense, loading } = useFinancialStats();
   const reportRef = useRef();
+  const isMobile = useIsMobile(640); // reactive breakpoint at 640px
 
   // Monthly bar chart data
   const monthlyData = useMemo(() => {
@@ -154,20 +156,20 @@ const Relatorios = () => {
                 <p className="text-sm">Sem dados suficientes.</p>
               </div>
             ) : (
-              <div className="h-64 md:h-80 w-full">
+              <div className="h-56 md:h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData} barGap={window.innerWidth < 640 ? 4 : 8}>
+                  <BarChart data={monthlyData} barGap={isMobile ? 4 : 8}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} tickFormatter={v => `${(v/1000).toFixed(0)}K`} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8', fontWeight: 600 }} dy={8} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8' }} tickFormatter={v => `${(v/1000).toFixed(0)}K`} width={28} />
                     <Tooltip
-                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', padding: '12px' }}
-                      itemStyle={{ fontWeight: 'bold', fontSize: '12px' }}
+                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', padding: '10px', fontSize: '12px' }}
+                      itemStyle={{ fontWeight: 'bold', fontSize: '11px' }}
                       formatter={v => [`${Number(v).toLocaleString('pt-BR')} Kz`]}
                     />
-                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '11px' }} />
-                    <Bar name="Entradas" dataKey="receitas" fill="#10B981" radius={[8,8,0,0]} barSize={window.innerWidth < 640 ? 12 : 24} />
-                    <Bar name="Saídas" dataKey="despesas" fill="#fb7185" radius={[8,8,0,0]} barSize={window.innerWidth < 640 ? 12 : 24} />
+                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '16px', fontSize: '10px' }} />
+                    <Bar name="Entradas" dataKey="receitas" fill="#10B981" radius={[6,6,0,0]} barSize={isMobile ? 10 : 22} />
+                    <Bar name="Saídas" dataKey="despesas" fill="#fb7185" radius={[6,6,0,0]} barSize={isMobile ? 10 : 22} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -182,16 +184,23 @@ const Relatorios = () => {
               {categoryData.length === 0 ? (
                 <div className="flex items-center justify-center h-48 text-slate-400 text-sm">Sem despesas.</div>
               ) : (
-                <div className="h-64 md:h-72 w-full">
+                <div className="h-56 md:h-72 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
-                      <Pie data={categoryData} innerRadius={window.innerWidth < 640 ? 60 : 80} outerRadius={window.innerWidth < 640 ? 90 : 110} paddingAngle={4} dataKey="value" stroke="none">
+                      <Pie
+                        data={categoryData}
+                        innerRadius={isMobile ? 50 : 80}
+                        outerRadius={isMobile ? 78 : 110}
+                        paddingAngle={4}
+                        dataKey="value"
+                        stroke="none"
+                      >
                         {categoryData.map((_, i) => (
                           <Cell key={i} fill={COLORS[i % COLORS.length]} />
                         ))}
                       </Pie>
                       <Tooltip 
-                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)', fontSize: '12px' }}
                         formatter={v => [`${Number(v).toLocaleString('pt-BR')} Kz`]} 
                       />
                       <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '10px' }}/>

@@ -162,8 +162,17 @@ const Login = () => {
       </div>
 
       {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-slate-50/30">
-        <div className="w-full max-w-md bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white relative overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 bg-slate-50/30">
+        
+        {/* Mobile Header (Only visible on small screens) */}
+        <div className="lg:hidden flex flex-col items-center mb-6 mt-2">
+          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20 mb-3">
+            <TrendingUp size={24} className="text-white" />
+          </div>
+          <h1 className="text-xl font-bold text-secondary tracking-tight">FinanceOS</h1>
+        </div>
+
+        <div className="w-full max-w-md bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white relative overflow-hidden">
           
           {isRegister && registerStep === 2 && (
             <button 

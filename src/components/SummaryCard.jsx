@@ -14,27 +14,27 @@ const SummaryCard = ({ title, amount, percentage, icon: Icon, colorClass = 'prim
   };
 
   return (
-    <div className="bento-card flex flex-col justify-between h-48 relative overflow-hidden group">
+    <div className="bento-card flex flex-col justify-between h-32 md:h-48 relative overflow-hidden group">
       <div className="flex justify-between items-start">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">
+        <div className="min-w-0">
+          <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5 md:mb-1 truncate">
             {title}
           </p>
-          <h3 className="text-2xl font-bold text-secondary tracking-tight">
-            {amount} <span className="text-sm font-normal text-slate-400">Kz</span>
+          <h3 className="text-lg md:text-2xl font-bold text-secondary tracking-tight truncate">
+            {amount} <span className="text-xs md:text-sm font-normal text-slate-400">Kz</span>
           </h3>
         </div>
-        <div className={`p-2 rounded-lg ${colors[colorClass] || colors.neutral}`}>
-          <IconComp size={20} />
+        <div className={`p-1.5 md:p-2 rounded-lg ${colors[colorClass] || colors.neutral} shrink-0`}>
+          <IconComp size={16} className="md:w-5 md:h-5" />
         </div>
       </div>
       
-      <div className="flex items-center gap-2 mt-4">
-        <div className={`flex items-center gap-1 text-xs font-bold ${isPositive ? 'text-primary' : 'text-negative'}`}>
-          {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+      <div className="flex items-center gap-1.5 md:gap-2 mt-2 md:mt-4">
+        <div className={`flex items-center gap-0.5 md:gap-1 text-[10px] md:text-xs font-bold ${isPositive ? 'text-primary' : 'text-negative'}`}>
+          {isPositive ? <TrendingUp size={12} className="md:w-3.5 md:h-3.5" /> : <TrendingDown size={12} className="md:w-3.5 md:h-3.5" />}
           <span>{Math.abs(percentage)}%</span>
         </div>
-        <span className="text-[10px] text-slate-400 font-medium">em relação ao mês passado</span>
+        <span className="text-[8px] md:text-[10px] text-slate-400 font-medium truncate">vs mês passado</span>
       </div>
 
       {/* Decorative gradient background hover effect */}

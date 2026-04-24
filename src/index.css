@@ -15,8 +15,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-family: sans-serif;
   margin: 0;
+  /* Prevent pull-to-refresh and overscroll on mobile */
+  overscroll-behavior-y: contain;
 }
 
+/* ── BENTO CARD ────────────────────────────────────────── */
 .bento-card {
   background-color: white;
   padding: 1.5rem;
@@ -26,6 +29,14 @@ body {
   transition: all 0.3s ease;
 }
 
+@media (max-width: 640px) {
+  .bento-card {
+    padding: 1rem;
+    border-radius: 1.25rem;
+  }
+}
+
+/* ── SCROLLBAR UTILITIES ───────────────────────────────── */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -44,9 +55,128 @@ body {
   scrollbar-width: none;
 }
 
-/* Safe area for mobile notch/home indicator */
+/* Horizontal scroll with fade indicators */
+.scroll-fade-right {
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent);
+  mask-image: linear-gradient(to right, black 85%, transparent);
+}
+
+/* ── SAFE AREA ─────────────────────────────────────────── */
 @supports (padding: env(safe-area-inset-bottom)) {
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ── MOBILE BOTTOM NAVIGATION ──────────────────────────── */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: white;
+  border-top: 1px solid #f1f5f9;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -4px 24px -4px rgba(0, 0, 0, 0.06);
+}
+
+.mobile-bottom-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  height: 3.75rem; /* 60px */
+  position: relative;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-decoration: none;
+  transition: color 0.2s ease;
+  padding: 4px 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav-item--active {
+  color: var(--color-primary);
+}
+
+.mobile-nav-item--active svg {
+  filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.3));
+}
+
+/* ── FLOATING ACTION BUTTON ────────────────────────────── */
+.mobile-fab {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: white;
+  border: 4px solid white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.45);
+  position: relative;
+  top: -14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.mobile-fab:active {
+  transform: scale(0.92);
+  box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.4);
+}
+
+/* ── MOBILE FULL-SCREEN MODAL ──────────────────────────── */
+@media (max-width: 768px) {
+  .modal-mobile-full {
+    position: fixed !important;
+    inset: 0 !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 100% !important;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+/* ── TOUCH FRIENDLY TAP TARGETS ────────────────────────── */
+@media (max-width: 768px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ── MOBILE CONTENT SPACING (bottom nav clearance) ─────── */
+@media (max-width: 1023px) {
+  .main-content-mobile {
+    padding-bottom: 5rem !important;
+  }
+}
+
+/* Hide on desktop, show on mobile */
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none !important;
+  }
+}
+
+/* Hide on mobile, show on desktop */
+@media (max-width: 1023px) {
+  .desktop-only {
+    display: none !important;
   }
 }

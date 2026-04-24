@@ -10,7 +10,7 @@ const Topbar = ({ title = 'Visão Geral', onSearchClick, isMobile, onMenuClick, 
       className="fixed top-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-slate-100 flex justify-between items-center px-4 md:px-6 lg:px-8 z-30 transition-all duration-300 ease-in-out"
       style={{ left: isMobile ? 0 : `${sidebarWidth}px` }}
     >
-      <div className="flex items-center gap-3 md:gap-5 min-w-0">
+      <div className="flex items-center gap-2 md:gap-5 flex-1 min-w-0 pr-2">
         {/* Hamburger — ONLY on mobile */}
         {isMobile && (
           <button 
@@ -22,7 +22,7 @@ const Topbar = ({ title = 'Visão Geral', onSearchClick, isMobile, onMenuClick, 
           </button>
         )}
 
-        <h2 className="text-xs sm:text-sm font-bold text-secondary uppercase tracking-widest truncate">{title}</h2>
+        <h2 className="text-[10px] sm:text-sm font-bold text-secondary uppercase tracking-widest truncate shrink min-w-0">{title}</h2>
         
         {/* Desktop search bar */}
         <button 

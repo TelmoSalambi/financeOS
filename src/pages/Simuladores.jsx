@@ -40,29 +40,33 @@ const Simuladores = () => {
     <Layout title="Simuladores de Futuro">
       <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
         
-        <div className="mb-8 md:mb-10 text-center max-w-2xl mx-auto">
-          <h1 className="text-2xl md:text-4xl font-black text-secondary tracking-tight px-4">Simuladores de Futuro</h1>
-          <p className="text-slate-500 mt-2 md:mt-3 text-sm md:text-lg font-medium leading-relaxed px-6">
+        <div className="mb-6 md:mb-10 text-center max-w-2xl mx-auto">
+          <h1 className="text-xl md:text-4xl font-black text-secondary tracking-tight px-4">Simuladores de Futuro</h1>
+          <p className="text-slate-500 mt-1.5 md:mt-3 text-sm md:text-lg font-medium leading-relaxed px-6">
             Planeie a sua liberdade financeira com ferramentas de simulação avançadas.
           </p>
         </div>
 
-        {/* Tabs Navigation - Scrollable on mobile */}
-        <div className="flex overflow-x-auto no-scrollbar sm:flex-wrap sm:justify-center gap-2 md:gap-3 mb-8 md:mb-12 px-4 -mx-4 sm:mx-0">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl font-bold transition-all border-2 shrink-0 ${
-                activeTab === tab.id 
-                  ? `border-transparent shadow-lg md:shadow-xl shadow-slate-200/50 ${tab.bg} ${tab.color}` 
-                  : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <tab.icon size={18} className="md:w-5 md:h-5" />
-              <span className="text-xs md:text-sm">{tab.label}</span>
-            </button>
-          ))}
+        {/* Tabs Navigation - Scrollable on mobile with fade indicator */}
+        <div className="relative mb-6 md:mb-12">
+          <div className="flex overflow-x-auto no-scrollbar sm:flex-wrap sm:justify-center gap-2 md:gap-3 px-4 -mx-4 sm:mx-0 scroll-fade-right sm:[mask-image:none]">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2.5 md:py-4 rounded-xl md:rounded-2xl font-bold transition-all border-2 shrink-0 text-xs md:text-sm ${
+                  activeTab === tab.id 
+                    ? `border-transparent shadow-lg md:shadow-xl shadow-slate-200/50 ${tab.bg} ${tab.color}` 
+                    : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <tab.icon size={16} className="md:w-5 md:h-5" />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+          {/* Mobile scroll hint arrow — visible only on mobile */}
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent sm:hidden" />
         </div>
 
         {/* Simulator Content */}

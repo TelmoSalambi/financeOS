@@ -3,6 +3,7 @@ import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import TransactionModal from './TransactionModal';
 import CommandPalette from './CommandPalette';
+import MobileBottomNav from './MobileBottomNav';
 
 const MOBILE_BREAKPOINT = 1024;
 
@@ -94,7 +95,7 @@ const Layout = ({ children, title }) => {
           sidebarWidth={sidebarWidth}
         />
 
-        <div className="px-4 md:px-6 lg:px-8 pt-20 pb-8 w-full max-w-[1600px] mx-auto">
+        <div className={`px-4 md:px-6 lg:px-8 pt-20 pb-8 w-full max-w-[1600px] mx-auto ${isMobile ? 'main-content-mobile' : ''}`}>
           {Children.map(children, child => {
             if (isValidElement(child)) {
               return cloneElement(child, { onEdit: openEdit });
@@ -104,11 +105,17 @@ const Layout = ({ children, title }) => {
         </div>
       </main>
 
+      {/* Mobile Bottom Navigation — only rendered on mobile */}
+      {isMobile && (
+        <MobileBottomNav onNewTransaction={openNew} />
+      )}
+
       <TransactionModal
         key={editingTransaction?.id || (isModalOpen ? 'open' : 'closed')}
         isOpen={isModalOpen}
         onClose={handleClose}
         editingTransaction={editingTransaction}
+        isMobile={isMobile}
       />
 
       <CommandPalette
@@ -121,3 +128,4 @@ const Layout = ({ children, title }) => {
 };
 
 export default Layout;
+
