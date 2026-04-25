@@ -24,40 +24,56 @@ export const AuthProvider = ({ children }) => {
   // a partir dos metadados do Supabase Auth (registo).
   // ─────────────────────────────────────────────
   const fetchProfile = async (currentUser) => {
-    if (!currentUser?.id) return null;
-
     try {
-      const { data } = await supabase
+      console.log('[Auth] Procurando perfil para:', currentUser.id);
+      setReady(false);
+      
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', currentUser.id)
         .single();
 
-      // Perfil existe e tem account_type → retorna imediatamente
-      if (data?.account_type) return data;
+      if (error) {
+        console.warn('[Auth] Perfil não encontrado ou erro:', error.message);
+        // Tenta criar se não existir
+        if (error.code === 'PGRST116') {
+          console.log('[Auth] Criando novo perfil a partir de metadados...');
+          const meta = currentUser.user_metadata || {};
+          
+          // Debug para vermos o que o Supabase está a devolver
+          console.log('[Auth] Metadados detetados:', meta);
 
-      // Perfil ainda não existe (ex: primeiro login com Google).
-      // Cria-o a partir dos metadados guardados no registo.
-      const meta = currentUser.user_metadata || {};
-      const payload = {
-        id:           currentUser.id,
-        full_name:    meta.full_name || meta.name || '',
-        account_type: meta.account_type || 'personal',
-        company_name: meta.company_name || '',
-        updated_at:   new Date().toISOString(),
-      };
+          const payload = {
+            id:           currentUser.id,
+            full_name:    meta.full_name || meta.name || '',
+            account_type: meta.account_type || 'personal', // Aqui o meta.account_type DEVE ser 'business'
+            company_name: meta.company_name || '',
+            updated_at:   new Date().toISOString(),
+          };
 
-      const { data: upserted } = await supabase
-        .from('profiles')
-        .upsert(payload, { onConflict: 'id' })
-        .select()
-        .single();
+          const { data: upserted } = await supabase
+            .from('profiles')
+            .upsert(payload, { onConflict: 'id' })
+            .select()
+            .single();
+          
+          if (upserted) setProfile(upserted);
+          return upserted || payload;
+        }
+      }
 
-      return upserted || payload;
-
+      if (data) {
+        console.log('[Auth] Perfil carregado com sucesso:', data.account_type);
+        setProfile(data);
+        return data;
+      }
     } catch (err) {
-      console.error('[Auth] fetchProfile error:', err);
+      console.error('[Auth] Erro fatal no fetchProfile:', err);
       return null;
+    } finally {
+      setLoading(false);
+      setReady(true);
     }
   };
 
@@ -65,87 +81,88 @@ export const AuthProvider = ({ children }) => {
   // Inicialização + listener de estado de auth
   // ─────────────────────────────────────────────
   useEffect(() => {
+    console.log('[Auth] Inicializando listener de autenticação...');
     let mounted = true;
 
-    const init = async () => {
-      if (initialized.current) return;
-      initialized.current = true;
-
+    // Timeout de emergência: se o Supabase não responder em 5s, liberta o ecrã
+    const emergencyTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('[Auth] Timeout de 5s atingido. Forçando libertação do ecrã.');
+        setLoading(false);
+        setReady(true);
+      }
+    }, 5000);
+    
+    const initAuth = async () => {
       try {
-        // Lê a sessão existente (ex: utilizador que já tinha sessão guardada)
-        const { data: { session } } = await supabase.auth.getSession();
-        const initialUser = session?.user ?? null;
+        console.log('[Auth] Verificando sessão atual...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        clearTimeout(emergencyTimeout); // Cancelar timeout se responder a tempo
 
-        if (initialUser && mounted) {
-          setUser(initialUser);
-          const p = await fetchProfile(initialUser);
-          if (mounted) setProfile(p);
+        if (error) {
+          console.error('[Auth] Erro ao obter sessão:', error.message);
+          if (mounted) {
+            setLoading(false);
+            setReady(true);
+          }
+          return;
+        }
+
+        if (session?.user && mounted) {
+          console.log('[Auth] Utilizador encontrado:', session.user.email);
+          setUser(session.user);
+          await fetchProfile(session.user);
+        } else if (mounted) {
+          console.log('[Auth] Nenhum utilizador logado.');
+          setLoading(false);
+          setReady(true);
         }
       } catch (err) {
-        console.error('[Auth] Init error:', err);
-      } finally {
-        // Só marca como pronto DEPOIS de carregar o perfil inicial
+        console.error('[Auth] Erro crítico na inicialização:', err);
         if (mounted) {
           setLoading(false);
           setReady(true);
         }
       }
+    };
 
-      // FIX #1: Guardar a subscription para poder cancelar no cleanup.
-      // Antes: supabase.auth.onAuthStateChange(...) sem guardar o retorno.
-      // O listener ficava ativo para sempre — mesmo após logout ou hot-reload —
-      // causando memory leaks e chamadas a setState em componentes destruídos.
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          if (!mounted) return;
+    initAuth();
 
-          const newUser = session?.user ?? null;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+        const newUser = session?.user ?? null;
 
-          // Só reage se o utilizador mudou de facto (login/logout)
-          // Evita re-renders desnecessários em refreshes de token
-          if (newUser?.id !== userRef.current?.id) {
+        if (newUser?.id !== userRef.current?.id) {
+          setLoading(true);
+          setReady(false);
+          setUser(newUser);
 
-            // FIX #2 (parte 1): Resetar AMBOS loading e ready durante a troca.
-            // Antes: só setLoading(true) mas ready ficava true.
-            // Como accountType depende de ready, ele resolvia com profile=null
-            // e devolvia 'personal' antes do fetchProfile terminar.
-            setLoading(true);
-            setReady(false);
-            setUser(newUser);
-
-            if (newUser) {
-              const p = await fetchProfile(newUser);
-              if (mounted) setProfile(p);
-            } else {
-              setProfile(null);
-            }
-
-            // FIX #2 (parte 2): Só libertar quando o perfil já chegou.
-            if (mounted) {
-              setLoading(false);
-              setReady(true);
-            }
-          }
-
-          // Logout explícito — limpar tudo
-          if (event === 'SIGNED_OUT') {
-            setUser(null);
+          if (newUser) {
+            const p = await fetchProfile(newUser);
+            if (mounted) setProfile(p);
+          } else {
             setProfile(null);
             setLoading(false);
             setReady(true);
           }
         }
-      );
 
-      // FIX #1 (continuação): Cancelar o listener quando o componente desmonta.
-      // Sem isto, o listener disparava indefinidamente após hot-reload ou logout.
-      return () => {
-        mounted = false;
-        subscription.unsubscribe();
-      };
+        if (event === 'SIGNED_OUT' && mounted) {
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+          setReady(true);
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      clearTimeout(emergencyTimeout);
+      subscription.unsubscribe();
     };
-
-    init();
   }, []);
 
   // ─────────────────────────────────────────────
@@ -199,13 +216,28 @@ export const AuthProvider = ({ children }) => {
   // Antes: também estava vazio no useMemo.
   const deleteAccount = async () => {
     if (!user) return;
+
     try {
       setLoading(true);
+      console.log('[Auth] Iniciando eliminação de conta para:', user.id);
+      
+      // 1. Apagar transações primeiro (evita erros de chave estrangeira)
+      await supabase.from('transactions').delete().eq('user_id', user.id);
+      
+      // 2. Apagar categorias personalizadas
+      await supabase.from('categories').delete().eq('user_id', user.id);
+
+      // 3. Apagar perfil
       await supabase.from('profiles').delete().eq('id', user.id);
+
+      // 4. Logout total
       await signOut();
+      
+      alert('A sua conta e dados foram eliminados com sucesso.');
     } catch (error) {
-      console.error('[Auth] deleteAccount error:', error);
-      await signOut();
+      console.error('[Auth] Erro ao eliminar conta:', error);
+      alert('Ocorreu um erro ao eliminar os dados. Por favor, tente novamente.');
+      setLoading(false);
     }
   };
 
@@ -227,11 +259,13 @@ export const AuthProvider = ({ children }) => {
   //      (metadados podem ser antigos ou inexistentes no Google OAuth)
   const accountType = useMemo(() => {
     if (!ready || loading)   return null; // ainda a inicializar
-    if (user && !profile)    return null; // perfil ainda não carregou
-    if (!user)               return null; // não autenticado
+    
+    // Se não há utilizador, o tipo é 'guest' (convidado), mas já está RESOLVIDO
+    if (!user)               return 'guest'; 
 
-    // A BD (profiles) é a fonte de verdade.
-    // Os metadados são fallback para quando o perfil ainda não foi criado.
+    // Se há utilizador mas o perfil ainda está a vir da BD
+    if (user && !profile)    return null; 
+
     return profile?.account_type
         || user?.user_metadata?.account_type
         || 'personal';

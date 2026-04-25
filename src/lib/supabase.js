@@ -21,7 +21,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storageKey: 'finance-os-session-v4',
+    storageKey: 'finance-os-session-v5',
     flowType: 'pkce'
   },
   global: {

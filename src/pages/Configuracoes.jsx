@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 import { User, Shield, Save, Loader2, CheckCircle2, Globe, Lock, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Configuracoes = () => {
-  const { user, deleteAccount } = useAuth();
+  const { user, profile, deleteAccount } = useAuth();
   const [loading, setLoading] = useState(false);
+  
+  // Estados do formulário sincronizados com o perfil atual
+  const [accountType, setAccountType] = useState(profile?.account_type || 'personal');
+  const [fullName, setFullName] = useState(profile?.full_name || user?.user_metadata?.full_name || '');
+  const [companyName, setCompanyName] = useState(profile?.company_name || '');
   const [currency, setCurrency] = useState('AOA');
   
-  // FIX #4: Estados para o Modal de Confirmação customizado (substitui window.prompt)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState('');
   const canConfirmDelete = deleteInput === 'APAGAR';
@@ -31,16 +36,37 @@ const Configuracoes = () => {
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Simulação de salvamento
-    setTimeout(() => {
-      toast.success('Configurações guardadas com sucesso!');
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: fullName,
+          account_type: accountType,
+          company_name: accountType === 'business' ? companyName : '',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      
+      toast.success('Perfil atualizado! Recarregue para aplicar todas as mudanças.');
+      
+      setTimeout(() => {
+        window.location.reload(); 
+      }, 1500);
+
+    } catch (error) {
+      console.error('[Config] Erro ao salvar:', error);
+      toast.error('Erro ao guardar alterações.');
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   return (
     <Layout title="Configurações">
-      <div className="max-w-4xl mx-auto animate-in fade-in duration-500">
+      <div className="max-w-4xl mx-auto animate-in fade-in duration-500 px-4 md:px-0">
         
         <div className="mb-8 md:mb-10">
           <h1 className="text-2xl md:text-3xl font-bold text-secondary">Definições</h1>
@@ -50,8 +76,8 @@ const Configuracoes = () => {
         <form onSubmit={handleSave} className="space-y-6 md:space-y-8 pb-20">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
-              <h3 className="font-bold text-secondary">Perfil & Moeda</h3>
-              <p className="text-xs text-slate-400 mt-1">Como o sistema deve exibir os seus dados.</p>
+              <h3 className="font-bold text-secondary text-sm md:text-base">Perfil & Moeda</h3>
+              <p className="text-[10px] md:text-xs text-slate-400 mt-1">Como o sistema deve exibir os seus dados.</p>
             </div>
             <div className="md:col-span-2 bento-card space-y-6">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 bg-slate-50 rounded-2xl">
@@ -61,17 +87,52 @@ const Configuracoes = () => {
                   ) : <User size={32} className="sm:w-7 sm:h-7" />}
                 </div>
                 <div className="text-center sm:text-left flex-1 min-w-0">
-                  <p className="font-bold text-secondary truncate w-full">{user?.user_metadata?.full_name || 'Usuário'}</p>
+                  <p className="font-bold text-secondary truncate w-full">{fullName || 'Usuário'}</p>
                   <p className="text-xs text-slate-400 truncate w-full">{user?.email}</p>
                   <div className="mt-2 flex justify-center sm:justify-start">
                     <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-1">
-                      <CheckCircle2 size={10} /> Verificado
+                      <CheckCircle2 size={10} /> Conta Verificada
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-2 px-1">Nome Completo</label>
+                  <input 
+                    type="text"
+                    value={fullName}
+                    onChange={e => setFullName(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-transparent rounded-xl text-sm focus:bg-white focus:border-primary/20 outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-2 px-1">Tipo de Conta</label>
+                  <select 
+                    value={accountType}
+                    onChange={e => setAccountType(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-transparent rounded-xl text-sm focus:bg-white focus:border-primary/20 outline-none transition-all"
+                  >
+                    <option value="personal">Modo Pessoal</option>
+                    <option value="business">Modo Profissional (Contabilista/Empresa)</option>
+                  </select>
+                </div>
+
+                {accountType === 'business' && (
+                  <div className="animate-in slide-in-from-top-2 duration-300">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-2 px-1">Nome da Empresa</label>
+                    <input 
+                      type="text"
+                      value={companyName}
+                      onChange={e => setCompanyName(e.target.value)}
+                      placeholder="Ex: Contabilidade Cruz"
+                      className="w-full px-4 py-3 bg-slate-50 border border-transparent rounded-xl text-sm focus:bg-white focus:border-secondary/20 outline-none transition-all"
+                    />
+                  </div>
+                )}
+                
                 <div>
                   <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-2 px-1">Moeda Padrão</label>
                   <div className="relative">
@@ -87,26 +148,14 @@ const Configuracoes = () => {
                     </select>
                   </div>
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block mb-2 px-1">Idioma</label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">🇵🇹</div>
-                    <select 
-                      disabled
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-transparent rounded-xl text-sm opacity-60 cursor-not-allowed"
-                    >
-                      <option>Português (AO)</option>
-                    </select>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
-              <h3 className="font-bold text-secondary">Segurança</h3>
-              <p className="text-xs text-slate-400 mt-1">Proteja o seu acesso e dados financeiros.</p>
+              <h3 className="font-bold text-secondary text-sm md:text-base">Segurança</h3>
+              <p className="text-[10px] md:text-xs text-slate-400 mt-1">Proteja o seu acesso e dados financeiros.</p>
             </div>
             <div className="md:col-span-2 bento-card space-y-4">
               <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl group hover:bg-slate-100 transition-colors">
@@ -137,11 +186,10 @@ const Configuracoes = () => {
             </div>
           </div>
 
-          {/* ZONA DE PERIGO — FIX #4: Confirmação Inline Segura */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
-              <h3 className="font-bold text-negative">Zona de Perigo</h3>
-              <p className="text-xs text-slate-400 mt-1">Ações irreversíveis na sua conta.</p>
+              <h3 className="font-bold text-negative text-sm md:text-base">Zona de Perigo</h3>
+              <p className="text-[10px] md:text-xs text-slate-400 mt-1">Ações irreversíveis na sua conta.</p>
             </div>
             <div className="md:col-span-2 bento-card border-negative/20 bg-negative/5">
               {!showDeleteConfirm ? (
@@ -165,7 +213,7 @@ const Configuracoes = () => {
                   <div className="flex items-start gap-3 p-3 bg-white/50 rounded-xl border border-negative/10">
                     <AlertTriangle className="text-negative shrink-0" size={18} />
                     <p className="text-xs text-negative font-medium leading-tight">
-                      Para confirmar a eliminação permanente, escreva <span className="font-black">APAGAR</span> abaixo.
+                      Para confirmar a eliminação permanente, escreva <span className="font-black text-xs">APAGAR</span> abaixo.
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2">
@@ -181,7 +229,7 @@ const Configuracoes = () => {
                         type="button"
                         disabled={!canConfirmDelete || loading}
                         onClick={handleDeleteAccount}
-                        className="flex-1 sm:flex-none px-6 py-2.5 bg-negative text-white font-bold rounded-xl disabled:opacity-30 disabled:grayscale transition-all flex items-center justify-center gap-2"
+                        className="flex-1 sm:flex-none px-6 py-2.5 bg-negative text-white font-bold rounded-xl disabled:opacity-30 disabled:grayscale transition-all flex items-center justify-center gap-2 text-xs"
                       >
                         {loading ? <Loader2 size={16} className="animate-spin" /> : <><Trash2 size={16} /> Apagar</>}
                       </button>

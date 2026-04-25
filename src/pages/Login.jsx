@@ -15,8 +15,18 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
+import { useNavigate } from 'react-router-dom';
+
 const Login = () => {
-  const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle, accountTypeReady } = useAuth();
+  const navigate = useNavigate();
+
+  // FIX #66: Redirecionar se já estiver logado
+  useEffect(() => {
+    if (user && accountTypeReady) {
+      navigate('/', { replace: true });
+    }
+  }, [user, accountTypeReady, navigate]);
   const [isRegister, setIsRegister] = useState(true);
   const [registerStep, setRegisterStep] = useState(1); 
   const [accountType, setAccountType] = useState('personal'); 
