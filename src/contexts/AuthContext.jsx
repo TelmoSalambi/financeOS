@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [ready, setReady] = useState(false);
-  
+
   const initialized = useRef(false);
   const userRef = useRef(user);
 
@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }) => {
    */
   const fetchProfile = async (currentUser) => {
     if (!currentUser?.id) return null;
-    
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -31,6 +31,7 @@ export const AuthProvider = ({ children }) => {
 
       if (data && data.account_type) return data;
 
+      // Profile doesn't exist yet — create it from metadata
       const meta = currentUser.user_metadata || {};
       const payload = {
         id: currentUser.id,
@@ -63,7 +64,7 @@ export const AuthProvider = ({ children }) => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const initialUser = session?.user ?? null;
-        
+
         if (initialUser && mounted) {
           setUser(initialUser);
           const p = await fetchProfile(initialUser);
@@ -80,24 +81,27 @@ export const AuthProvider = ({ children }) => {
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (!mounted) return;
-        
+
         const newUser = session?.user ?? null;
-        
+
         if (newUser?.id !== userRef.current?.id) {
+          // FIX #2: Reset both loading AND ready during user switch
+          // This prevents accountType from resolving prematurely
+          // while the new user's profile is still being fetched.
           setLoading(true);
-          setReady(false); // BUG FIX #2: Reset ready state during user swap
+          setReady(false);
           setUser(newUser);
-          
+
           if (newUser) {
             const p = await fetchProfile(newUser);
             if (mounted) setProfile(p);
           } else {
             setProfile(null);
           }
-          
+
           if (mounted) {
             setLoading(false);
-            setReady(true); // Release once profile is fetched
+            setReady(true); // Only unblock after profile is loaded
           }
         }
 
@@ -118,35 +122,35 @@ export const AuthProvider = ({ children }) => {
     init();
   }, []);
 
-  const signIn = (email, password) => supabase.auth.signInWithPassword({ email, password });
-  
-  const signUp = (email, password, fullName, accountType, companyName) => 
+  const signIn = (email, password) =>
+    supabase.auth.signInWithPassword({ email, password });
+
+  const signUp = (email, password, fullName, accountType, companyName) =>
     supabase.auth.signUp({
-      email, 
-      password, 
-      options: { 
-        data: { 
-          full_name: fullName, 
-          account_type: accountType, 
-          company_name: companyName 
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          account_type: accountType,
+          company_name: companyName,
         },
-        emailRedirectTo: `${window.location.origin}/`
-      }
+        emailRedirectTo: `${window.location.origin}/`,
+      },
     });
 
-  const signInWithGoogle = () => 
+  const signInWithGoogle = () =>
     supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { 
+      options: {
         redirectTo: `${window.location.origin}/`,
-        queryParams: { prompt: 'select_account' }
-      }
+        queryParams: { prompt: 'select_account' },
+      },
     });
 
   const signOut = async () => {
     try {
       setLoading(true);
-      setReady(false);
       setUser(null);
       setProfile(null);
       localStorage.clear();
@@ -170,32 +174,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // BUG FIX #1 & #3: Robust account type resolution
+  // FIX #2 + #3: Explicit, safe conditions — no ambiguous fallbacks while loading.
+  // Returns null when data isn't ready, preventing premature 'personal' resolution.
   const accountType = useMemo(() => {
-    // Explicit and safe conditions
-    if (!ready || loading) return null; // Still initializing
-    if (user && !profile) return null;  // User exists but profile hasn't loaded
-    if (!user) return null;             // Not authenticated
+    if (!ready || loading) return null;  // Still initialising — block resolution
+    if (user && !profile) return null;   // User exists but profile hasn't loaded yet
+    if (!user) return null;              // Not authenticated
 
+    // FIX #1: DB profile takes priority over metadata.
+    // Metadata can be stale (e.g. old registration) or missing (Google OAuth).
+    // The profiles table is the single source of truth.
     const fromProfile = profile?.account_type;
     const fromMeta = user?.user_metadata?.account_type;
-    
-    // Priority: Profile (DB) -> Metadata (Auth) -> Default
+
     return fromProfile || fromMeta || 'personal';
   }, [user, profile, ready, loading]);
 
   const value = useMemo(() => ({
-    user, 
-    profile, 
-    loading: !ready || loading, 
+    user,
+    profile,
+    loading: !ready || loading,
     accountTypeReady: accountType !== null,
     isBusiness: accountType === 'business',
     isPersonal: accountType === 'personal',
-    signIn, 
-    signUp, 
-    signInWithGoogle, 
+    signIn,
+    signUp,
+    signInWithGoogle,
     signOut,
-    deleteAccount
+    deleteAccount,
   }), [user, profile, ready, loading, accountType]);
 
   return (
@@ -206,7 +212,3 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-
-
-
-
