@@ -66,8 +66,24 @@ const ProtectedRoute = ({ children }) => {
     </div>
   );
   
-  if (!user) return <Navigate to="/login" />;
+  if (!user) return <Navigate to="/login" replace />;
   return children;
+};
+
+/**
+ * Dynamic Home component that decides which dashboard to show
+ * based on the user's account type.
+ */
+const Home = () => {
+  const { isBusiness, loading } = useAuth();
+
+  if (loading) return (
+    <div className="h-screen w-screen flex items-center justify-center bg-background">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary shadow-xl shadow-primary/20"></div>
+    </div>
+  );
+
+  return isBusiness ? <MeusClientes /> : <Dashboard />;
 };
 
 function App() {
@@ -78,7 +94,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
             <Route path="/receitas" element={<ProtectedRoute><Receitas /></ProtectedRoute>} />
             <Route path="/despesas" element={<ProtectedRoute><Despesas /></ProtectedRoute>} />
             <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
@@ -17,24 +17,11 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   /**
-   * Resolves the user profile with account_type.
-   * Priority: profiles table → user_metadata → 'personal' default.
-   * Auto-upserts missing profiles so the DB stays in sync.
+   * Resolves the user profile and ensures DB sync.
    */
   const fetchProfile = async (currentUser) => {
     if (!currentUser?.id) return null;
     
-    const meta = currentUser.user_metadata || {};
-    console.log('[FinanceOS] user_metadata:', JSON.stringify(meta));
-
-    // Build a fallback profile from metadata (always available)
-    const metaProfile = {
-      id: currentUser.id,
-      account_type: meta.account_type || 'personal',
-      full_name: meta.full_name || meta.name || '',
-      company_name: meta.company_name || '',
-    };
-
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -42,43 +29,29 @@ export const AuthProvider = ({ children }) => {
         .eq('id', currentUser.id)
         .single();
 
-      console.log('[FinanceOS] profiles table result:', { data, error: error?.message });
+      // If profile exists and is complete, use it
+      if (data && data.account_type) return data;
 
-      // If profile exists AND has a valid account_type, use it
-      if (data && data.account_type) {
-        console.log('[FinanceOS] Using DB profile, account_type:', data.account_type);
-        return data;
-      }
-
-      // DB profile is missing or incomplete — try to upsert from metadata
-      const accountType = meta.account_type || data?.account_type || 'personal';
-      const profilePayload = {
+      // Sync metadata to DB if missing
+      const meta = currentUser.user_metadata || {};
+      const payload = {
         id: currentUser.id,
-        full_name: meta.full_name || meta.name || data?.full_name || '',
-        account_type: accountType,
-        company_name: meta.company_name || data?.company_name || '',
+        full_name: meta.full_name || meta.name || '',
+        account_type: meta.account_type || 'personal',
+        company_name: meta.company_name || '',
         updated_at: new Date().toISOString(),
       };
 
-      console.log('[FinanceOS] Upserting profile with:', profilePayload);
-
-      const { data: upserted, error: upsertError } = await supabase
+      const { data: upserted } = await supabase
         .from('profiles')
-        .upsert(profilePayload, { onConflict: 'id' })
+        .upsert(payload, { onConflict: 'id' })
         .select()
         .single();
 
-      if (upsertError) {
-        console.warn('[FinanceOS] Upsert failed:', upsertError.message, '- using metadata fallback');
-        return { ...metaProfile, ...(data || {}) , account_type: accountType };
-      }
-
-      console.log('[FinanceOS] Upserted profile:', upserted);
-      return upserted;
+      return upserted || payload;
     } catch (err) {
-      console.error('[FinanceOS] fetchProfile crash:', err);
-      console.log('[FinanceOS] Returning metadata fallback:', metaProfile);
-      return metaProfile;
+      console.error('[Auth] Profile sync error:', err);
+      return null;
     }
   };
 
@@ -89,7 +62,6 @@ export const AuthProvider = ({ children }) => {
       if (initialized.current) return;
       initialized.current = true;
 
-      // 1. Immediate Session Check
       const { data: { session } } = await supabase.auth.getSession();
       const initialUser = session?.user ?? null;
       
@@ -104,7 +76,6 @@ export const AuthProvider = ({ children }) => {
         setReady(true);
       }
 
-      // 2. Realtime Auth Listener
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (!mounted) return;
         
@@ -165,51 +136,48 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       setLoading(true);
-      
-      // Limpeza atómica instantânea do React
       setUser(null);
       setProfile(null);
-      
-      // Limpar todos os storages
       localStorage.clear();
       sessionStorage.clear();
       
-      // Tentar terminar a sessão no servidor, mas com timeout de segurança (máx 1s)
       await Promise.race([
         supabase.auth.signOut(),
         new Promise(resolve => setTimeout(resolve, 1000))
       ]);
       
-      // Redirecionamento duro
       window.location.href = '/login';
     } catch (error) {
-      console.error('Logout error:', error);
       window.location.href = '/login';
     }
   };
 
-  // Derive account type — metadata is the MOST RELIABLE source since
-  // signUp() always stores it there, regardless of DB triggers
-  const accountType = user?.user_metadata?.account_type || profile?.account_type || 'personal';
-  console.log('[FinanceOS] Final accountType resolution:', accountType, '| isBusiness:', accountType === 'business');
+  // IMMEDIATE DERIVATION: Don't wait for profile state if user metadata is available
+  const accountType = useMemo(() => {
+    const fromMeta = user?.user_metadata?.account_type;
+    const fromProfile = profile?.account_type;
+    return fromMeta || fromProfile || 'personal';
+  }, [user, profile]);
+
+  const value = useMemo(() => ({
+    user, 
+    profile, 
+    loading: !ready || loading, 
+    isBusiness: accountType === 'business',
+    isPersonal: accountType !== 'business',
+    signIn, 
+    signUp, 
+    signInWithGoogle, 
+    signOut 
+  }), [user, profile, ready, loading, accountType]);
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      profile, 
-      loading: !ready || loading, 
-      isBusiness: accountType === 'business',
-      isPersonal: accountType !== 'business',
-      signIn, 
-      signUp, 
-      signInWithGoogle, 
-      signOut 
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
+
 
