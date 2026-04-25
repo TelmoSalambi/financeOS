@@ -84,21 +84,28 @@ export const AuthProvider = ({ children }) => {
         const newUser = session?.user ?? null;
         
         if (newUser?.id !== userRef.current?.id) {
-          setLoading(true); // Restart loading for the new user state
+          setLoading(true);
+          setReady(false); // BUG FIX #2: Reset ready state during user swap
           setUser(newUser);
+          
           if (newUser) {
             const p = await fetchProfile(newUser);
             if (mounted) setProfile(p);
           } else {
             setProfile(null);
           }
-          setLoading(false);
+          
+          if (mounted) {
+            setLoading(false);
+            setReady(true); // Release once profile is fetched
+          }
         }
 
         if (event === 'SIGNED_OUT') {
           setUser(null);
           setProfile(null);
           setLoading(false);
+          setReady(true);
         }
       });
 
@@ -139,6 +146,7 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       setLoading(true);
+      setReady(false);
       setUser(null);
       setProfile(null);
       localStorage.clear();
@@ -162,14 +170,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Improved account type resolution based on user diagnosis
+  // BUG FIX #1 & #3: Robust account type resolution
   const accountType = useMemo(() => {
-    if (!ready || (user && !profile && loading)) return null;
-    
-    const fromMeta = user?.user_metadata?.account_type;
+    // Explicit and safe conditions
+    if (!ready || loading) return null; // Still initializing
+    if (user && !profile) return null;  // User exists but profile hasn't loaded
+    if (!user) return null;             // Not authenticated
+
     const fromProfile = profile?.account_type;
+    const fromMeta = user?.user_metadata?.account_type;
     
-    return fromMeta || fromProfile || 'personal';
+    // Priority: Profile (DB) -> Metadata (Auth) -> Default
+    return fromProfile || fromMeta || 'personal';
   }, [user, profile, ready, loading]);
 
   const value = useMemo(() => ({
@@ -194,6 +206,7 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
 
 
 
