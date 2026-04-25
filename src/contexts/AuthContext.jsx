@@ -265,9 +265,9 @@ export const AuthProvider = ({ children }) => {
     // Se não há utilizador, o tipo é 'guest' (convidado), mas já está RESOLVIDO
     if (!user)               return 'guest'; 
 
-    // Se há utilizador mas o perfil ainda está a vir da BD
-    if (user && !profile)    return null; 
-
+    // Se há utilizador mas o perfil ainda não chegou (ou falhou)
+    // FALLBACK: Não bloquear o ecrã se já tivermos o user.
+    // Usamos os metadados do Auth ou 'personal' como segurança.
     return profile?.account_type
         || user?.user_metadata?.account_type
         || 'personal';
