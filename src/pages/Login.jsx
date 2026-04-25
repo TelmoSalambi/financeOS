@@ -153,7 +153,7 @@ const Login = () => {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-2xl overflow-hidden border border-white/10 scale-110 p-2">
-              <img src="/logo.png" alt="FinanceOS Logo" className="w-full h-full object-contain" />
+              <img src="/logo.jpg" alt="FinanceOS Logo" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tighter ml-2">Finance<span className="text-primary">OS</span></h1>
           </div>
