@@ -40,11 +40,21 @@ const Sidebar = ({ onNewTransaction, isMobile, mobileOpen, collapsed, onCloseMob
     <aside className={sidebarClass}>
 
       {/* Logo + Toggle */}
-      <div className="p-4 flex items-center justify-between min-h-[64px]">
+      <div className="p-4 flex items-center gap-3 min-h-[64px]">
         {isExpanded && (
-          <h1 className="text-xl font-black text-white">
-            Finance<span className="text-primary">OS</span>
-          </h1>
+          <>
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg overflow-hidden border border-white/10 shrink-0">
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
+            </div>
+            <h1 className="text-xl font-black text-white tracking-tighter">
+              Finance<span className="text-primary">OS</span>
+            </h1>
+          </>
+        )}
+        {collapsed && !isMobile && (
+          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg overflow-hidden border border-white/10 mx-auto">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
+          </div>
         )}
         {!isMobile && (
           <button
