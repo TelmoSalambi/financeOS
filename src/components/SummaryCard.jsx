@@ -1,44 +1,53 @@
 import React from 'react';
-import { TrendingUp, TrendingDown } from 'lucide-react';
 
-const SummaryCard = ({ title, amount, percentage, icon: Icon, colorClass = 'primary' }) => {
-  // Using Icon as a component is standard, but the linter might be confused.
-  // I'll ensure it's treated as used.
-  const IconComp = Icon;
-  const isPositive = percentage > 0;
-  
+// FIX #5: Adicionado fallback para amount undefined/null.
+// Antes: {amount} renderizava "undefined Kz" ou ficava em branco
+// sem nenhum indicador visual de que os dados ainda não chegaram.
+// Agora: mostra '—' enquanto o valor não está disponível.
+
+const SummaryCard = ({ title, amount, percentage, icon: Icon, colorClass }) => {
   const colors = {
-    primary: 'bg-primary/10 text-primary',
+    primary:  'bg-primary/10 text-primary',
     negative: 'bg-negative/10 text-negative',
-    neutral: 'bg-slate-100 text-slate-500'
+    amber:    'bg-amber-500/10 text-amber-500',
   };
 
+  // Formata o valor ou devolve placeholder
+  const displayAmount = amount != null ? amount : '—';
+
   return (
-    <div className="bento-card flex flex-col justify-between h-32 md:h-48 relative overflow-hidden group">
-      <div className="flex justify-between items-start">
-        <div className="min-w-0">
-          <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-0.5 md:mb-1 truncate">
-            {title}
-          </p>
-          <h3 className="text-lg md:text-2xl font-bold text-secondary tracking-tight truncate">
-            {amount} <span className="text-xs md:text-sm font-normal text-slate-400">Kz</span>
-          </h3>
+    <div className="bento-card p-5 md:p-6 group hover:translate-y-[-2px] transition-all">
+      <div className="flex justify-between items-start mb-4">
+
+        {/* Ícone */}
+        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center ${colors[colorClass] ?? colors.primary}`}>
+          {Icon && <Icon size={20} className="md:w-6 md:h-6" />}
         </div>
-        <div className={`p-1.5 md:p-2 rounded-lg ${colors[colorClass] || colors.neutral} shrink-0`}>
-          <IconComp size={16} className="md:w-5 md:h-5" />
-        </div>
-      </div>
-      
-      <div className="flex items-center gap-1.5 md:gap-2 mt-2 md:mt-4">
-        <div className={`flex items-center gap-0.5 md:gap-1 text-[10px] md:text-xs font-bold ${isPositive ? 'text-primary' : 'text-negative'}`}>
-          {isPositive ? <TrendingUp size={12} className="md:w-3.5 md:h-3.5" /> : <TrendingDown size={12} className="md:w-3.5 md:h-3.5" />}
-          <span>{Math.abs(percentage)}%</span>
-        </div>
-        <span className="text-[8px] md:text-[10px] text-slate-400 font-medium truncate">vs mês passado</span>
+
+        {/* Badge de percentagem — só mostra se for diferente de 0 e existir */}
+        {percentage != null && percentage !== 0 && (
+          <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${
+            percentage > 0
+              ? 'bg-emerald-50 text-emerald-600'
+              : 'bg-rose-50 text-rose-600'
+          }`}>
+            {percentage > 0 ? '+' : ''}{percentage}%
+          </span>
+        )}
       </div>
 
-      {/* Decorative gradient background hover effect */}
-      <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-gradient-to-br from-primary/5 to-transparent rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+      {/* Título */}
+      <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">
+        {title}
+      </p>
+
+      {/* Valor */}
+      <h3 className="text-xl md:text-2xl font-black text-secondary">
+        {displayAmount}
+        {amount != null && (
+          <span className="text-[10px] md:text-xs font-normal opacity-40 ml-1">Kz</span>
+        )}
+      </h3>
     </div>
   );
 };
