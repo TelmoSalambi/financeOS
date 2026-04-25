@@ -29,6 +29,17 @@ export const useFinancialStats = (targetUserId = null) => {
       return;
     }
 
+    // Saída de emergência: se o Supabase não responder em 4s, liberta o dashboard
+    const timeout = setTimeout(() => {
+      setStats(prev => {
+        if (prev.loading) {
+          console.warn('[useFinancialStats] Tempo de espera excedido. Libertando dashboard.');
+          return { ...prev, loading: false };
+        }
+        return prev;
+      });
+    }, 4000);
+
     try {
       const { data, error } = await supabase
         .from('transactions')
@@ -36,6 +47,7 @@ export const useFinancialStats = (targetUserId = null) => {
         .eq('user_id', userId)
         .order('date', { ascending: false });
 
+      clearTimeout(timeout);
       if (error) throw error;
 
       const rows = data || [];
