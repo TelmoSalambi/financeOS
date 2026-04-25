@@ -46,7 +46,7 @@ const Sidebar = ({ onNewTransaction, isMobile, mobileOpen, collapsed, onCloseMob
         {isExpanded && (
           <>
             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg overflow-hidden border border-white/10 shrink-0 p-1.5">
-              <img src="/logo.jpg" alt="Logo" className="w-full h-full object-contain" />
+              <img src="/logo.jpg?v=2" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <h1 className="text-xl font-black text-white tracking-tighter">
               Finance<span className="text-primary">OS</span>
