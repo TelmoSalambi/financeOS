@@ -5,9 +5,21 @@ import { User, Bell, Shield, Wallet, Save, Loader2, CheckCircle2, Globe, Lock } 
 import { toast } from 'sonner';
 
 const Configuracoes = () => {
-  const { user } = useAuth();
+  const { user, deleteAccount } = useAuth();
   const [loading, setLoading] = useState(false);
   const [currency, setCurrency] = useState('AOA');
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm('⚠️ TEM A CERTEZA? Esta ação irá apagar todos os seus dados (transações, metas, etc.) permanentemente e não poderá ser desfeita.')) {
+      setLoading(true);
+      try {
+        await deleteAccount();
+      } catch (error) {
+        toast.error('Erro ao apagar conta. Tente novamente.');
+        setLoading(false);
+      }
+    }
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -123,7 +135,33 @@ const Configuracoes = () => {
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-1">
+              <h3 className="font-bold text-negative">Zona de Perigo</h3>
+              <p className="text-xs text-slate-400 mt-1">Ações irreversíveis na sua conta.</p>
+            </div>
+            <div className="md:col-span-2 bento-card border-negative/10 bg-negative/5">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2">
+                <div className="text-center sm:text-left">
+                  <h4 className="text-sm font-bold text-negative">Apagar Conta</h4>
+                  <p className="text-[10px] text-negative/60 font-medium leading-relaxed">
+                    Todos os seus dados, transações e configurações serão removidos permanentemente. 
+                    Esta ação não pode ser desfeita.
+                  </p>
+                </div>
+                <button 
+                  type="button"
+                  disabled={loading}
+                  onClick={handleDeleteAccount}
+                  className="w-full sm:w-auto px-6 py-3 bg-white text-negative border border-negative/20 font-bold rounded-xl hover:bg-negative hover:text-white transition-all active:scale-95 text-xs shadow-sm disabled:opacity-50"
+                >
+                  {loading ? 'A processar...' : 'Apagar Tudo'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-slate-100">
             <button 
               type="submit" 
               disabled={loading}
