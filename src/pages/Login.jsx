@@ -21,12 +21,12 @@ const Login = () => {
   const { user, signIn, signUp, signInWithGoogle, accountTypeReady } = useAuth();
   const navigate = useNavigate();
 
-  // FIX #66: Redirecionar se já estiver logado
+  // FIX #73: Redirecionamento agressivo — se há user, sai do login imediatamente
   useEffect(() => {
-    if (user && accountTypeReady) {
+    if (user) {
       navigate('/', { replace: true });
     }
-  }, [user, accountTypeReady, navigate]);
+  }, [user, navigate]);
   const [isRegister, setIsRegister] = useState(true);
   const [registerStep, setRegisterStep] = useState(1); 
   const [accountType, setAccountType] = useState('personal'); 
@@ -77,8 +77,22 @@ const Login = () => {
     try {
       let result;
       if (isRegister) {
+        console.log('[Login] Tentando registo...');
         result = await signUp(form.email, form.password, form.fullName, accountType, form.companyName);
+        
+        // FIX #74: Se o utilizador já existe, tenta fazer login automaticamente
+        if (result?.error?.message?.includes('User already registered')) {
+          console.log('[Login] Utilizador já existe, tentando login automático...');
+          result = await signIn(form.email, form.password);
+        }
+
         if (!result.error && result.data?.user) {
+          // Se o Supabase devolveu uma sessão (sem confirmação de email), o useEffect cuidará do resto
+          if (result.data.session) {
+            console.log('[Login] Sessão ativa detetada após registo/login.');
+            return;
+          }
+          
           if (isMounted.current) {
             setSuccess(true);
             setLoading(false);
@@ -93,11 +107,12 @@ const Login = () => {
         const errorMsg = result.error.message;
         if (result.error.status === 429) setError('Muitas tentativas seguidas. Aguarde 2 minutos.');
         else if (errorMsg.includes('Invalid login credentials')) setError('Email ou palavra-passe incorretos.');
-        else if (errorMsg.includes('Email not confirmed')) setError('Por favor, confirme o seu e-mail.');
+        else if (errorMsg.includes('Email not confirmed')) setError('Por favor, confirme o seu e-mail para entrar.');
         else setError(errorMsg || 'Erro inesperado.');
       }
-    } catch {
-      if (isMounted.current) setError('Erro de conexão.');
+    } catch (err) {
+      console.error('[Login] Erro no submetimento:', err);
+      if (isMounted.current) setError('Erro de conexão ou sistema.');
     } finally {
       if (isMounted.current && !success) setLoading(false);
     }
