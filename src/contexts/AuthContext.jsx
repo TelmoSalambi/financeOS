@@ -16,17 +16,63 @@ export const AuthProvider = ({ children }) => {
     userRef.current = user;
   }, [user]);
 
-  const fetchProfile = async (userId) => {
-    if (!userId) return null;
+  /**
+   * Fetches the user profile from the 'profiles' table.
+   * If the profile doesn't exist or is missing account_type,
+   * it falls back to user_metadata and upserts the profile.
+   */
+  const fetchProfile = async (currentUser) => {
+    if (!currentUser?.id) return null;
     try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('id', currentUser.id)
         .single();
-      return error ? null : data;
-    } catch {
-      return null;
+
+      // If profile exists AND has account_type, use it directly
+      if (data && data.account_type) {
+        return data;
+      }
+
+      // ── FALLBACK: read from user_metadata (where signUp stores it) ──
+      const meta = currentUser.user_metadata || {};
+      const accountType = data?.account_type || meta.account_type || 'personal';
+      const fullName = meta.full_name || meta.name || '';
+      const companyName = meta.company_name || '';
+
+      // Upsert the profile so future logins are instant
+      const profilePayload = {
+        id: currentUser.id,
+        full_name: fullName,
+        account_type: accountType,
+        company_name: companyName,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data: upserted, error: upsertError } = await supabase
+        .from('profiles')
+        .upsert(profilePayload, { onConflict: 'id' })
+        .select()
+        .single();
+
+      if (upsertError) {
+        console.warn('Profile upsert failed:', upsertError.message);
+        // Still return a usable profile object from metadata
+        return { ...profilePayload, ...(data || {}) };
+      }
+
+      return upserted;
+    } catch (err) {
+      console.error('fetchProfile error:', err);
+      // Absolute fallback — use metadata so the UI never breaks
+      const meta = currentUser.user_metadata || {};
+      return {
+        id: currentUser.id,
+        account_type: meta.account_type || 'personal',
+        full_name: meta.full_name || meta.name || '',
+        company_name: meta.company_name || '',
+      };
     }
   };
 
@@ -43,7 +89,7 @@ export const AuthProvider = ({ children }) => {
       
       if (initialUser && mounted) {
         setUser(initialUser);
-        const p = await fetchProfile(initialUser.id);
+        const p = await fetchProfile(initialUser);
         if (mounted) setProfile(p);
       }
       
@@ -61,7 +107,7 @@ export const AuthProvider = ({ children }) => {
         if (newUser?.id !== userRef.current?.id) {
           setUser(newUser);
           if (newUser) {
-            const p = await fetchProfile(newUser.id);
+            const p = await fetchProfile(newUser);
             if (mounted) setProfile(p);
           } else {
             setProfile(null);
@@ -136,13 +182,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Derive account type from the best available source
+  const accountType = profile?.account_type || user?.user_metadata?.account_type || 'personal';
+
   return (
     <AuthContext.Provider value={{ 
       user, 
       profile, 
       loading: !ready || loading, 
-      isBusiness: profile?.account_type === 'business',
-      isPersonal: profile?.account_type !== 'business',
+      isBusiness: accountType === 'business',
+      isPersonal: accountType !== 'business',
       signIn, 
       signUp, 
       signInWithGoogle, 
@@ -155,3 +204,4 @@ export const AuthProvider = ({ children }) => {
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
+
