@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 // silenciosamente. Agora, se as variáveis de ambiente estiverem em falta, o erro
 // aparece imediatamente no arranque — muito mais fácil de diagnosticar.
 const supabaseUrl = 'https://koroFMXB85Qq7TzPcciATw.supabase.co'
-const supabaseAnonKey = 'sb_publishable_koroFMXB85Qq7TzPcciATw_jfydR0jeGZ_9R9H-8j_kQ'
+const supabaseAnonKey = 'sb_publishable_koroFMXB85Qq7TzPcciATw_jfydR0je'
 
 // Verificação de segurança simplificada
 if (!supabaseUrl || !supabaseAnonKey) {
