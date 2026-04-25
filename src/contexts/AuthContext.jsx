@@ -29,10 +29,8 @@ export const AuthProvider = ({ children }) => {
         .eq('id', currentUser.id)
         .single();
 
-      // If profile exists and is complete, use it
       if (data && data.account_type) return data;
 
-      // Sync metadata to DB if missing
       const meta = currentUser.user_metadata || {};
       const payload = {
         id: currentUser.id,
@@ -62,18 +60,22 @@ export const AuthProvider = ({ children }) => {
       if (initialized.current) return;
       initialized.current = true;
 
-      const { data: { session } } = await supabase.auth.getSession();
-      const initialUser = session?.user ?? null;
-      
-      if (initialUser && mounted) {
-        setUser(initialUser);
-        const p = await fetchProfile(initialUser);
-        if (mounted) setProfile(p);
-      }
-      
-      if (mounted) {
-        setLoading(false);
-        setReady(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const initialUser = session?.user ?? null;
+        
+        if (initialUser && mounted) {
+          setUser(initialUser);
+          const p = await fetchProfile(initialUser);
+          if (mounted) setProfile(p);
+        }
+      } catch (err) {
+        console.error('[Auth] Init error:', err);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+          setReady(true);
+        }
       }
 
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -82,6 +84,7 @@ export const AuthProvider = ({ children }) => {
         const newUser = session?.user ?? null;
         
         if (newUser?.id !== userRef.current?.id) {
+          setLoading(true); // Restart loading for the new user state
           setUser(newUser);
           if (newUser) {
             const p = await fetchProfile(newUser);
@@ -140,35 +143,47 @@ export const AuthProvider = ({ children }) => {
       setProfile(null);
       localStorage.clear();
       sessionStorage.clear();
-      
-      await Promise.race([
-        supabase.auth.signOut(),
-        new Promise(resolve => setTimeout(resolve, 1000))
-      ]);
-      
+      await supabase.auth.signOut();
       window.location.href = '/login';
     } catch (error) {
       window.location.href = '/login';
     }
   };
 
-  // IMMEDIATE DERIVATION: Don't wait for profile state if user metadata is available
+  const deleteAccount = async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      await supabase.from('profiles').delete().eq('id', user.id);
+      await signOut();
+    } catch (error) {
+      console.error('Delete account error:', error);
+      await signOut();
+    }
+  };
+
+  // Improved account type resolution based on user diagnosis
   const accountType = useMemo(() => {
+    if (!ready || (user && !profile && loading)) return null;
+    
     const fromMeta = user?.user_metadata?.account_type;
     const fromProfile = profile?.account_type;
+    
     return fromMeta || fromProfile || 'personal';
-  }, [user, profile]);
+  }, [user, profile, ready, loading]);
 
   const value = useMemo(() => ({
     user, 
     profile, 
     loading: !ready || loading, 
+    accountTypeReady: accountType !== null,
     isBusiness: accountType === 'business',
-    isPersonal: accountType !== 'business',
+    isPersonal: accountType === 'personal',
     signIn, 
     signUp, 
     signInWithGoogle, 
-    signOut 
+    signOut,
+    deleteAccount
   }), [user, profile, ready, loading, accountType]);
 
   return (
@@ -179,5 +194,6 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
+
 
 

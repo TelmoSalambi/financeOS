@@ -75,9 +75,9 @@ const ProtectedRoute = ({ children }) => {
  * based on the user's account type.
  */
 const Home = () => {
-  const { isBusiness, loading } = useAuth();
+  const { isBusiness, loading, accountTypeReady } = useAuth();
 
-  if (loading) return (
+  if (loading || !accountTypeReady) return (
     <div className="h-screen w-screen flex items-center justify-center bg-background">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary shadow-xl shadow-primary/20"></div>
     </div>
