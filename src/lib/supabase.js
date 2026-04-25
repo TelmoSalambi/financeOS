@@ -4,16 +4,12 @@ import { createClient } from '@supabase/supabase-js'
 // Antes: || 'placeholder' fazia o app iniciar sem erro mas todas as queries falhavam
 // silenciosamente. Agora, se as variáveis de ambiente estiverem em falta, o erro
 // aparece imediatamente no arranque — muito mais fácil de diagnosticar.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabaseUrl = 'https://koroFMXB85Qq7TzPcciATw.supabase.co'
+const supabaseAnonKey = 'sb_publishable_koroFMXB85Qq7TzPcciATw_jfydR0jeGZ_9R9H-8j_kQ'
 
+// Verificação de segurança simplificada
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    '[Supabase] Variáveis de ambiente em falta.\n' +
-    'Verifica se VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão definidas:\n' +
-    '  - Localmente: ficheiro .env na raiz do projeto\n' +
-    '  - Vercel: Settings → Environment Variables'
-  )
+  throw new Error('[Supabase] Chaves de acesso não configuradas corretamente.')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
