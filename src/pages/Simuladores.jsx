@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { 
   Palmtree, 
@@ -11,7 +11,9 @@ import {
   Info,
   DollarSign,
   Calendar,
-  Percent
+  Percent,
+  X,
+  Plus
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -38,39 +40,37 @@ const Simuladores = () => {
 
   return (
     <Layout title="Simuladores de Futuro">
-      <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
+      <div className="max-w-6xl mx-auto animate-in fade-in duration-500 pb-24">
         
-        <div className="mb-6 md:mb-10 text-center max-w-2xl mx-auto">
-          <h1 className="text-xl md:text-4xl font-black text-secondary tracking-tight px-4">Simuladores de Futuro</h1>
-          <p className="text-slate-500 mt-1.5 md:mt-3 text-sm md:text-lg font-medium leading-relaxed px-6">
-            Planeie a sua liberdade financeira com ferramentas de simulação avançadas.
+        <div className="mb-8 md:mb-14 text-center max-w-2xl mx-auto px-4">
+          <h1 className="text-3xl md:text-5xl font-black text-secondary tracking-tight">Simuladores</h1>
+          <p className="text-slate-500 mt-3 text-sm md:text-lg font-medium leading-relaxed">
+            Ferramentas matemáticas para projetar o seu futuro financeiro com precisão.
           </p>
         </div>
 
-        {/* Tabs Navigation - Scrollable on mobile with fade indicator */}
-        <div className="relative mb-6 md:mb-12">
-          <div className="flex overflow-x-auto no-scrollbar sm:flex-wrap sm:justify-center gap-2 md:gap-3 px-4 -mx-4 sm:mx-0 scroll-fade-right sm:[mask-image:none]">
+        {/* Tabs Navigation */}
+        <div className="relative mb-8 md:mb-12">
+          <div className="flex overflow-x-auto no-scrollbar sm:flex-wrap sm:justify-center gap-3 px-4 md:px-0">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2.5 md:py-4 rounded-xl md:rounded-2xl font-bold transition-all border-2 shrink-0 text-xs md:text-sm ${
+                className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-black transition-all border-2 shrink-0 text-xs md:text-sm ${
                   activeTab === tab.id 
-                    ? `border-transparent shadow-lg md:shadow-xl shadow-slate-200/50 ${tab.bg} ${tab.color}` 
-                    : 'border-slate-100 text-slate-400 hover:border-slate-200 hover:bg-slate-50'
+                    ? `border-transparent shadow-2xl shadow-slate-200/50 ${tab.bg} ${tab.color}` 
+                    : 'border-slate-50 text-slate-400 hover:border-slate-100 hover:bg-slate-50'
                 }`}
               >
-                <tab.icon size={16} className="md:w-5 md:h-5" />
+                <tab.icon size={18} />
                 <span>{tab.label}</span>
               </button>
             ))}
           </div>
-          {/* Mobile scroll hint arrow — visible only on mobile */}
-          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent sm:hidden" />
         </div>
 
         {/* Simulator Content */}
-        <div className="min-h-[500px] md:min-h-[600px] px-4 md:px-0">
+        <div className="min-h-[600px]">
           {activeTab === 'reforma' && <RetirementSimulator />}
           {activeTab === 'juros' && <CompoundInterestSimulator />}
           {activeTab === 'fire' && <FireSimulator />}
@@ -86,13 +86,22 @@ const Simuladores = () => {
 const RetirementSimulator = () => {
   const [inputs, setInputs] = useState({ age: 25, retirementAge: 65, salary: 250000, savingsRate: 20, returnRate: 8 });
 
+  // FIX #55: Sincronização de idade para evitar valores impossíveis
+  useEffect(() => {
+    if (inputs.retirementAge <= inputs.age) {
+      setInputs(prev => ({ ...prev, retirementAge: prev.age + 1 }));
+    }
+  }, [inputs.age, inputs.retirementAge]);
+
   const data = useMemo(() => {
     let balance = 0;
     const years = [];
     const monthlyContribution = (inputs.salary * (inputs.savingsRate / 100));
     const monthlyRate = (inputs.returnRate / 100) / 12;
 
-    for (let i = 0; i <= (inputs.retirementAge - inputs.age); i++) {
+    const diff = Math.max(1, inputs.retirementAge - inputs.age);
+
+    for (let i = 0; i <= diff; i++) {
       years.push({ year: inputs.age + i, balance: Math.round(balance) });
       for (let m = 0; m < 12; m++) {
         balance = (balance + monthlyContribution) * (1 + monthlyRate);
@@ -104,43 +113,43 @@ const RetirementSimulator = () => {
   const finalBalance = data[data.length - 1]?.balance || 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-      <div className="lg:col-span-1 space-y-4 md:space-y-6">
-        <div className="bento-card p-6 md:p-8">
-          <h3 className="font-bold text-secondary mb-6 flex items-center gap-2">
-            <Calculator size={18} className="text-emerald-500" /> Parâmetros
-          </h3>
-          <div className="space-y-5">
-            <InputRange label="Idade Actual" value={inputs.age} min={18} max={80} onChange={v => setInputs({...inputs, age: v})} suffix="anos" />
-            <InputRange label="Idade de Reforma" value={inputs.retirementAge} min={inputs.age + 1} max={100} onChange={v => setInputs({...inputs, retirementAge: v})} suffix="anos" />
-            <InputAmount label="Salário Mensal" value={inputs.salary} onChange={v => setInputs({...inputs, salary: v})} />
-            <InputRange label="% de Poupança" value={inputs.savingsRate} min={1} max={90} onChange={v => setInputs({...inputs, savingsRate: v})} suffix="%" />
-            <InputRange label="Retorno Anual" value={inputs.returnRate} min={1} max={25} onChange={v => setInputs({...inputs, returnRate: v})} suffix="%" />
-          </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="lg:col-span-1 bento-card p-8 space-y-8">
+        <h3 className="font-black text-secondary flex items-center gap-2 uppercase tracking-widest text-[10px]">
+          <Calculator size={16} className="text-emerald-500" /> Parâmetros de Reforma
+        </h3>
+        <div className="space-y-6">
+          <InputRange label="Idade Atual" value={inputs.age} min={18} max={80} onChange={v => setInputs({...inputs, age: v})} suffix="anos" />
+          <InputRange label="Idade de Reforma" value={inputs.retirementAge} min={inputs.age + 1} max={100} onChange={v => setInputs({...inputs, retirementAge: v})} suffix="anos" />
+          <InputAmount label="Salário Mensal" value={inputs.salary} onChange={v => setInputs({...inputs, salary: v})} />
+          <InputRange label="% de Poupança" value={inputs.savingsRate} min={1} max={90} onChange={v => setInputs({...inputs, savingsRate: v})} suffix="%" />
+          <InputRange label="Retorno Anual Esperado" value={inputs.returnRate} min={1} max={25} onChange={v => setInputs({...inputs, returnRate: v})} suffix="%" />
         </div>
       </div>
 
-      <div className="lg:col-span-2 space-y-4 md:space-y-6">
-        <div className="bento-card p-6 md:p-10 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-2xl shadow-emerald-200/50 relative overflow-hidden group">
+      <div className="lg:col-span-2 space-y-6">
+        <div className="bento-card p-10 bg-gradient-to-br from-emerald-600 to-teal-700 text-white border-none shadow-2xl shadow-emerald-200/40 relative overflow-hidden group">
           <div className="relative z-10">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-2">Património Acumulado na Reforma</p>
-            <h2 className="text-3xl md:text-5xl font-black truncate">{finalBalance.toLocaleString('pt-BR')} <span className="text-sm md:text-xl font-normal opacity-60">Kz</span></h2>
-            <div className="mt-6 md:mt-8 grid grid-cols-2 gap-4 md:gap-8 border-t border-white/10 pt-6 md:pt-8">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-3">Património Estimado aos {inputs.retirementAge} anos</p>
+            <h2 className="text-4xl md:text-6xl font-black tracking-tighter truncate">
+              {finalBalance.toLocaleString('pt-BR')} <span className="text-lg md:text-2xl font-normal opacity-50">Kz</span>
+            </h2>
+            <div className="mt-10 grid grid-cols-2 gap-8 border-t border-white/10 pt-8">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Tempo</p>
-                <p className="text-lg md:text-xl font-bold">{inputs.retirementAge - inputs.age} Anos</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Anos de Acumulação</p>
+                <p className="text-xl font-black">{Math.max(0, inputs.retirementAge - inputs.age)} Anos</p>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Poupança</p>
-                <p className="text-lg md:text-xl font-bold truncate">{(inputs.salary * (inputs.savingsRate/100)).toLocaleString('pt-BR')} Kz</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Aporte Mensal</p>
+                <p className="text-xl font-black truncate">{(inputs.salary * (inputs.savingsRate/100)).toLocaleString('pt-BR')} Kz</p>
               </div>
             </div>
           </div>
-          <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-700"></div>
+          <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-1000"></div>
         </div>
 
-        <div className="bento-card p-6 md:p-8 h-[300px] md:h-[350px]">
-          <h3 className="font-bold text-secondary mb-6 text-sm md:text-base">Projecção de Crescimento</h3>
+        <div className="bento-card p-8 h-[350px]">
+          <h3 className="font-black text-secondary mb-8 text-[10px] uppercase tracking-widest">Crescimento do Património</h3>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>
               <defs>
@@ -150,13 +159,14 @@ const RetirementSimulator = () => {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8' }} />
+              <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 'bold' }} />
               <YAxis hide />
               <Tooltip 
-                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.1)' }}
-                formatter={(v) => [`${v.toLocaleString()} Kz`, 'Património']}
+                contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.1)', padding: '15px' }}
+                itemStyle={{ fontWeight: 'black', fontSize: '13px' }}
+                formatter={(v) => [`${v.toLocaleString()} Kz`, 'Total']}
               />
-              <Area type="monotone" dataKey="balance" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorBalance)" />
+              <Area type="monotone" dataKey="balance" stroke="#10B981" strokeWidth={4} fillOpacity={1} fill="url(#colorBalance)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -186,47 +196,52 @@ const CompoundInterestSimulator = () => {
   const total = data[data.length - 1]?.total || 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-      <div className="lg:col-span-1 bento-card p-6 md:p-8">
-        <h3 className="font-bold text-secondary mb-6 flex items-center gap-2">
-          <TrendingUp size={18} className="text-blue-500" /> Variáveis
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="lg:col-span-1 bento-card p-8 space-y-8">
+        <h3 className="font-black text-secondary flex items-center gap-2 uppercase tracking-widest text-[10px]">
+          <TrendingUp size={16} className="text-blue-500" /> Matemática do Juro
         </h3>
         <div className="space-y-6">
           <InputAmount label="Capital Inicial" value={inputs.initial} onChange={v => setInputs({...inputs, initial: v})} />
           <InputAmount label="Aporte Mensal" value={inputs.monthly} onChange={v => setInputs({...inputs, monthly: v})} />
-          <InputRange label="Período" value={inputs.years} min={1} max={50} onChange={v => setInputs({...inputs, years: v})} suffix="anos" />
-          <InputRange label="Taxa Anual" value={inputs.rate} min={1} max={40} onChange={v => setInputs({...inputs, rate: v})} suffix="%" />
+          <InputRange label="Período de Tempo" value={inputs.years} min={1} max={50} onChange={v => setInputs({...inputs, years: v})} suffix="anos" />
+          <InputRange label="Taxa de Rentabilidade Anual" value={inputs.rate} min={1} max={40} onChange={v => setInputs({...inputs, rate: v})} suffix="%" />
         </div>
       </div>
 
-      <div className="lg:col-span-2 space-y-4 md:space-y-6">
-        <div className="bento-card p-6 md:p-10 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-2xl shadow-emerald-200/50 relative overflow-hidden group">
+      <div className="lg:col-span-2 space-y-6">
+        <div className="bento-card p-10 bg-gradient-to-br from-blue-600 to-indigo-700 text-white border-none shadow-2xl shadow-blue-200/40 relative overflow-hidden group">
           <div className="relative z-10">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Estimativa em {inputs.years} anos</p>
-            <h2 className="text-3xl md:text-5xl font-black truncate">{total.toLocaleString('pt-BR')} <span className="text-sm md:text-xl font-normal opacity-60">Kz</span></h2>
-            <div className="mt-6 md:mt-8 grid grid-cols-2 gap-4 md:gap-12 border-t border-white/10 pt-6 md:pt-8">
+            <p className="text-[10px] font-black uppercase tracking-widest text-white/50 mb-3">Estimativa Total em {inputs.years} anos</p>
+            <h2 className="text-4xl md:text-6xl font-black tracking-tighter truncate">
+              {total.toLocaleString('pt-BR')} <span className="text-lg md:text-2xl font-normal opacity-50">Kz</span>
+            </h2>
+            <div className="mt-10 grid grid-cols-2 gap-8 border-t border-white/10 pt-8">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Total Investido</p>
-                <p className="text-lg md:text-xl font-bold truncate">{(inputs.initial + (inputs.monthly * 12 * inputs.years)).toLocaleString('pt-BR')} Kz</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Total Investido</p>
+                <p className="text-xl font-black truncate">{(inputs.initial + (inputs.monthly * 12 * inputs.years)).toLocaleString('pt-BR')} Kz</p>
               </div>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Ganhos Juros</p>
-                <p className="text-lg md:text-xl font-bold text-emerald-300 truncate">{(total - (inputs.initial + (inputs.monthly * 12 * inputs.years))).toLocaleString('pt-BR')} Kz</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Lucro de Juros</p>
+                <p className="text-xl font-black text-blue-300 truncate">{(total - (inputs.initial + (inputs.monthly * 12 * inputs.years))).toLocaleString('pt-BR')} Kz</p>
               </div>
             </div>
           </div>
-          <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-700"></div>
+          <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-1000"></div>
         </div>
 
-        <div className="bento-card p-6 md:p-8 h-[300px] md:h-[350px]">
-          <h3 className="font-bold text-secondary mb-6 text-sm md:text-base">Aceleração de Capital</h3>
+        <div className="bento-card p-8 h-[350px]">
+          <h3 className="font-black text-secondary mb-8 text-[10px] uppercase tracking-widest">Aceleração Composta</h3>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 9, fill: '#94a3b8' }} />
+              <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 'bold' }} />
               <YAxis hide />
-              <Tooltip formatter={v => [`${v.toLocaleString()} Kz`]} />
-              <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={4} dot={false} />
+              <Tooltip 
+                contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 50px rgba(0,0,0,0.1)', padding: '15px' }}
+                formatter={v => [`${v.toLocaleString()} Kz`, 'Montante']} 
+              />
+              <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={5} dot={false} animationDuration={2000} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -238,35 +253,45 @@ const CompoundInterestSimulator = () => {
 /* --- 3. Fire Simulator --- */
 const FireSimulator = () => {
   const [expense, setExpense] = useState(300000);
-  const fireNumber = expense * 12 * 25; // Rule of 25 (4% rule)
+  const [swr, setSwr] = useState(4); // Safe Withdrawal Rate (4% rule)
+  
+  // FIX #56: Tornar o SWR parametrizável
+  const fireNumber = useMemo(() => {
+    return (expense * 12) / (swr / 100);
+  }, [expense, swr]);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 md:space-y-8">
-      <div className="bento-card p-6 md:p-10 text-center">
-        <Flame size={48} className="mx-auto text-orange-500 mb-4 md:mb-6" />
-        <h3 className="text-xl md:text-2xl font-bold text-secondary mb-2">Qual o seu Número FIRE?</h3>
-        <p className="text-slate-500 text-xs md:text-sm mb-8 md:mb-10">O montante necessário para viver dos seus investimentos para sempre.</p>
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div className="bento-card p-10 md:p-16 text-center">
+        <div className="w-20 h-20 bg-orange-100 text-orange-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-xl shadow-orange-100">
+          <Flame size={40} />
+        </div>
+        <h3 className="text-2xl md:text-3xl font-black text-secondary mb-3 tracking-tight">Qual o seu Número FIRE?</h3>
+        <p className="text-slate-500 text-sm mb-12 max-w-lg mx-auto font-medium">Calcule o património necessário para viver apenas dos rendimentos dos seus investimentos.</p>
         
-        <div className="max-w-xs md:max-w-sm mx-auto mb-8 md:mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 text-left">
           <InputAmount label="Despesa Mensal Desejada" value={expense} onChange={setExpense} />
+          <InputRange label="Taxa de Levantamento (SWR)" value={swr} min={2} max={10} step={0.5} onChange={setSwr} suffix="%" />
         </div>
 
-        <div className="p-6 md:p-8 bg-orange-50 border-2 border-orange-100 rounded-3xl md:rounded-[2.5rem]">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-orange-400 mb-2">Independência Financeira</p>
-          <h2 className="text-3xl md:text-6xl font-black text-orange-600 truncate">{fireNumber.toLocaleString('pt-BR')} <span className="text-sm md:text-2xl font-bold opacity-60">Kz</span></h2>
+        <div className="p-10 md:p-14 bg-gradient-to-br from-orange-500 to-rose-600 text-white rounded-[3rem] shadow-2xl shadow-orange-200">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 mb-3">Liberdade Financeira Total</p>
+          <h2 className="text-4xl md:text-7xl font-black tracking-tighter truncate">
+            {Math.round(fireNumber).toLocaleString('pt-BR')} <span className="text-lg md:text-3xl font-bold opacity-50">Kz</span>
+          </h2>
         </div>
 
-        <div className="mt-8 md:mt-10 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-left">
-          <div className="p-5 md:p-6 bg-slate-50 rounded-2xl">
-            <h4 className="font-bold text-secondary flex items-center gap-2 mb-2 text-sm"><Info size={16} /> Regra dos 4%</h4>
-            <p className="text-[11px] md:text-xs text-slate-500 leading-relaxed">
-              Baseia-se na teoria de que se retirar 4% do seu património anualmente, o dinheiro durará décadas.
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+          <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100">
+            <h4 className="font-black text-secondary flex items-center gap-2 mb-3 text-sm uppercase tracking-widest"><Info size={16} /> A Regra Clássica</h4>
+            <p className="text-xs text-slate-500 leading-relaxed font-medium">
+              A regra dos 4% (SWR) sugere que se o seu património for 25x a sua despesa anual, pode retirar dinheiro indefinidamente.
             </p>
           </div>
-          <div className="p-5 md:p-6 bg-slate-50 rounded-2xl">
-            <h4 className="font-bold text-secondary flex items-center gap-2 mb-2 text-sm"><TrendingUp size={16} /> Acelere o Processo</h4>
-            <p className="text-[11px] md:text-xs text-slate-500 leading-relaxed">
-              Quanto mais baixa for a sua despesa mensal, mais rápido atingirá o seu número FIRE.
+          <div className="p-8 bg-slate-50 rounded-3xl border border-slate-100">
+            <h4 className="font-black text-secondary flex items-center gap-2 mb-3 text-sm uppercase tracking-widest"><TrendingUp size={16} /> Inflação</h4>
+            <p className="text-xs text-slate-500 leading-relaxed font-medium">
+              Em economias com inflação alta, considere uma taxa de levantamento (SWR) mais conservadora (Ex: 3% ou 3.5%).
             </p>
           </div>
         </div>
@@ -284,42 +309,42 @@ const GoalTimeSimulator = () => {
   const years = (months / 12).toFixed(1);
 
   return (
-    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-      <div className="bento-card p-6 md:p-10">
-        <h3 className="text-lg md:text-xl font-bold text-secondary mb-8">Defina o Objetivo</h3>
-        <div className="space-y-6">
-          <InputAmount label="Valor da Meta" value={inputs.target} onChange={v => setInputs({...inputs, target: v})} />
-          <InputAmount label="Valor que já tem" value={inputs.current} onChange={v => setInputs({...inputs, current: v})} />
-          <InputAmount label="Poupança p/ mês" value={inputs.monthly} onChange={v => setInputs({...inputs, monthly: v})} />
+    <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-8">
+      <div className="lg:col-span-2 bento-card p-10 space-y-8">
+        <h3 className="text-xl font-black text-secondary tracking-tight">Definir Objetivo</h3>
+        <div className="space-y-8">
+          <InputAmount label="Valor Total da Meta" value={inputs.target} onChange={v => setInputs({...inputs, target: v})} />
+          <InputAmount label="Montante Já Acumulado" value={inputs.current} onChange={v => setInputs({...inputs, current: v})} />
+          <InputAmount label="Capacidade Mensal de Poupança" value={inputs.monthly} onChange={v => setInputs({...inputs, monthly: v})} />
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 md:gap-6">
-        <div className="bento-card p-8 md:p-10 flex-1 bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-2xl shadow-emerald-200/50 relative overflow-hidden group flex flex-col justify-center items-center text-center">
+      <div className="lg:col-span-3 flex flex-col gap-6">
+        <div className="bento-card p-10 flex-1 bg-slate-900 text-white border-none shadow-2xl relative overflow-hidden group flex flex-col justify-center items-center text-center">
           <div className="relative z-10">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Tempo Estimado</p>
-            <h2 className="text-4xl md:text-6xl font-black">{months} <span className="text-xl md:text-2xl font-bold opacity-60">meses</span></h2>
-            <p className="mt-2 md:mt-4 font-bold text-white/80 text-sm md:text-base">ou cerca de {years} anos</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-4">Estimativa de Tempo</p>
+            <h2 className="text-5xl md:text-8xl font-black tracking-tighter">{months} <span className="text-xl md:text-3xl font-bold opacity-30 uppercase">meses</span></h2>
+            <p className="mt-6 font-black text-primary text-lg md:text-2xl uppercase tracking-widest">~ {years} Anos</p>
           </div>
-          <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-white/10 rounded-full blur-2xl transition-transform group-hover:scale-150 duration-700"></div>
+          <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-1000"></div>
         </div>
         
-        <div className="bento-card p-6 md:p-8 bg-slate-900 text-white">
-          <h4 className="font-bold mb-4 text-sm md:text-base">Análise de Progresso</h4>
-          <div className="space-y-4">
-            <div className="flex justify-between text-[11px] md:text-xs">
-              <span className="text-slate-400">Total Necessário</span>
-              <span className="font-bold truncate ml-2">{inputs.target.toLocaleString()} Kz</span>
+        <div className="bento-card p-8 bg-white border border-slate-100">
+          <h4 className="font-black text-secondary mb-6 text-[10px] uppercase tracking-widest">Análise de Progresso Real</h4>
+          <div className="space-y-5">
+            <div className="flex justify-between text-xs font-bold">
+              <span className="text-slate-400 uppercase">Ainda Falta</span>
+              <span className="text-negative truncate ml-4 tracking-tighter text-sm">{remaining.toLocaleString()} Kz</span>
             </div>
-            <div className="flex justify-between text-[11px] md:text-xs">
-              <span className="text-slate-400">Falta Acumular</span>
-              <span className="font-bold text-rose-400 truncate ml-2">{remaining.toLocaleString()} Kz</span>
-            </div>
-            <div className="h-2 bg-white/10 rounded-full overflow-hidden mt-2">
+            <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-primary transition-all duration-1000" 
-                style={{ width: `${Math.min(100, (inputs.current / inputs.target) * 100)}%` }}
+                className="h-full bg-primary transition-all duration-1000 shadow-lg shadow-primary/20" 
+                style={{ width: `${Math.min(100, (inputs.current / (inputs.target || 1)) * 100)}%` }}
               />
+            </div>
+            <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              <span>{Math.floor((inputs.current / (inputs.target || 1)) * 100)}% Concluído</span>
+              <span>100%</span>
             </div>
           </div>
         </div>
@@ -338,7 +363,7 @@ const DebtSimulator = () => {
     let balance = debt;
     const monthlyRate = (interest / 100) / 12;
     let m = 0;
-    while (balance > 0 && m < 360) { // Max 30 years
+    while (balance > 0 && m < 600) { // Max 50 years
       const interestPayment = balance * monthlyRate;
       if (payment <= interestPayment) return Infinity; // Cannot pay off
       balance = balance + interestPayment - payment;
@@ -348,32 +373,36 @@ const DebtSimulator = () => {
   }, [debt, interest, payment]);
 
   return (
-    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-      <div className="bento-card p-6 md:p-10">
-        <h3 className="text-lg md:text-xl font-bold text-secondary mb-8">Detalhes da Dívida</h3>
-        <div className="space-y-6">
-          <InputAmount label="Saldo Devedor" value={debt} onChange={setDebt} />
-          <InputRange label="Taxa de Juro" value={interest} min={1} max={60} onChange={setInterest} suffix="%" />
-          <InputAmount label="Pagamento Mensal" value={payment} onChange={setPayment} />
+    <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="bento-card p-10 space-y-8">
+        <h3 className="text-xl font-black text-secondary tracking-tight">Cenário de Dívida</h3>
+        <div className="space-y-8">
+          <InputAmount label="Montante Total em Dívida" value={debt} onChange={setDebt} />
+          <InputRange label="Taxa de Juro Efetiva (Anual)" value={interest} min={1} max={60} onChange={setInterest} suffix="%" />
+          <InputAmount label="Pagamento Mensal Previsto" value={payment} onChange={setPayment} />
         </div>
       </div>
 
-      <div className={`bento-card p-8 md:p-10 flex flex-col justify-center items-center text-center relative overflow-hidden group transition-all duration-500 ${months === Infinity ? 'bg-rose-50 border-rose-200' : 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none shadow-2xl shadow-emerald-200/50'}`}>
+      <div className={`bento-card p-10 md:p-14 flex flex-col justify-center items-center text-center relative overflow-hidden group transition-all duration-700 ${months === Infinity ? 'bg-rose-50 border-rose-200' : 'bg-gradient-to-br from-slate-800 to-slate-900 text-white border-none shadow-2xl'}`}>
         {months === Infinity ? (
-          <>
-            <ShieldAlert size={48} className="text-rose-500 mb-4" />
-            <h4 className="text-rose-600 font-bold text-lg md:text-xl">Atenção!</h4>
-            <p className="text-rose-500 text-xs md:text-sm mt-2">O seu pagamento mensal não cobre os juros. A dívida está a crescer.</p>
-          </>
-        ) : (
-          <div className="relative z-10 w-full">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-2">Libertação Total em</p>
-            <h2 className="text-4xl md:text-6xl font-black">{months} <span className="text-xl md:text-2xl font-bold opacity-60">meses</span></h2>
-            <div className="mt-6 md:mt-8 pt-6 md:pt-8 border-t border-white/10 w-full">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">Montante Total Pago</p>
-              <p className="text-xl md:text-2xl font-bold text-white truncate">{(months * payment).toLocaleString()} <span className="text-xs font-normal opacity-60">Kz</span></p>
+          <div className="animate-in zoom-in duration-500">
+            <div className="w-20 h-20 bg-rose-100 text-rose-500 rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <ShieldAlert size={40} />
             </div>
-            <div className="absolute -right-12 -bottom-12 w-40 h-40 bg-white/10 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-700"></div>
+            <h4 className="text-rose-600 font-black text-2xl tracking-tight mb-3">Dívida Infinita!</h4>
+            <p className="text-rose-500 text-sm font-medium max-w-xs mx-auto leading-relaxed">
+              O seu pagamento mensal é inferior aos juros acumulados. Aumente o valor mensal para sair desta situação.
+            </p>
+          </div>
+        ) : (
+          <div className="relative z-10 w-full animate-in fade-in duration-700">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-4">Libertação Total em</p>
+            <h2 className="text-6xl md:text-8xl font-black tracking-tighter">{months} <span className="text-xl md:text-3xl font-bold opacity-30 uppercase">meses</span></h2>
+            <div className="mt-12 pt-10 border-t border-white/10 w-full">
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">Custo Total (Capital + Juros)</p>
+              <p className="text-2xl font-black text-emerald-400 tracking-tighter truncate">{(months * payment).toLocaleString()} <span className="text-sm font-normal opacity-50 uppercase ml-1">Kz</span></p>
+            </div>
+            <div className="absolute -right-16 -bottom-16 w-64 h-64 bg-white/5 rounded-full blur-3xl transition-transform group-hover:scale-150 duration-1000"></div>
           </div>
         )}
       </div>
@@ -382,29 +411,29 @@ const DebtSimulator = () => {
 };
 
 /* --- Utility Components --- */
-const InputRange = ({ label, value, min, max, onChange, suffix }) => (
-  <div className="space-y-3">
+const InputRange = ({ label, value, min, max, step = 1, onChange, suffix }) => (
+  <div className="space-y-4">
     <div className="flex justify-between items-center px-1">
-      <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</label>
-      <span className="text-sm font-black text-secondary">{value} {suffix}</span>
+      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</label>
+      <span className="text-sm font-black text-secondary bg-slate-100 px-3 py-1 rounded-lg">{value}{suffix}</span>
     </div>
     <input 
-      type="range" min={min} max={max} value={value} 
-      onChange={e => onChange(parseInt(e.target.value))}
-      className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-primary"
+      type="range" min={min} max={max} step={step} value={value} 
+      onChange={e => onChange(parseFloat(e.target.value))}
+      className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-primary"
     />
   </div>
 );
 
 const InputAmount = ({ label, value, onChange }) => (
-  <div className="space-y-2">
-    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 block px-1">{label}</label>
-    <div className="relative">
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 font-bold text-xs uppercase">Kz</div>
+  <div className="space-y-3">
+    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 block px-1">{label}</label>
+    <div className="relative group">
+      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 font-black text-[10px] uppercase tracking-widest">Kz</div>
       <input 
         type="number" value={value} 
-        onChange={e => onChange(parseFloat(e.target.value || 0))}
-        className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-transparent rounded-2xl text-sm font-bold text-secondary focus:bg-white focus:border-slate-200 outline-none transition-all"
+        onChange={e => onChange(Math.max(0, parseFloat(e.target.value || 0)))}
+        className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-transparent rounded-2xl text-sm font-black text-secondary focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-slate-200 outline-none transition-all"
       />
     </div>
   </div>

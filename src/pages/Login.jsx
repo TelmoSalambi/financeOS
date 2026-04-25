@@ -43,7 +43,6 @@ const Login = () => {
     if (loading) return;
     setLoading(true);
     try {
-      // Direct redirect for speed
       await signInWithGoogle();
     } catch {
       if (isMounted.current) {
@@ -81,21 +80,14 @@ const Login = () => {
       }
 
       if (result?.error && isMounted.current) {
-        const errorCode = result.error.status;
         const errorMsg = result.error.message;
-
-        if (errorCode === 429) {
-          setError('Muitas tentativas seguidas. Aguarde 2 minutos.');
-        } else if (errorMsg.includes('Invalid login credentials')) {
-          setError('Email ou palavra-passe incorretos.');
-        } else if (errorMsg.includes('Email not confirmed')) {
-          setError('Por favor, confirme o seu e-mail na sua caixa de entrada.');
-        } else {
-          setError(errorMsg || 'Erro inesperado. Tente novamente.');
-        }
+        if (result.error.status === 429) setError('Muitas tentativas seguidas. Aguarde 2 minutos.');
+        else if (errorMsg.includes('Invalid login credentials')) setError('Email ou palavra-passe incorretos.');
+        else if (errorMsg.includes('Email not confirmed')) setError('Por favor, confirme o seu e-mail.');
+        else setError(errorMsg || 'Erro inesperado.');
       }
     } catch {
-      if (isMounted.current) setError('Erro de conexão. Verifique a internet.');
+      if (isMounted.current) setError('Erro de conexão.');
     } finally {
       if (isMounted.current && !success) setLoading(false);
     }
@@ -114,9 +106,8 @@ const Login = () => {
             <CheckCircle2 size={40} />
           </div>
           <h2 className="text-3xl font-black text-secondary mb-4">Conta Criada!</h2>
-          <p className="text-slate-500 font-medium leading-relaxed mb-8">
-            Enviámos um link de confirmação para <span className="text-secondary font-bold">{form.email}</span>. 
-            Por favor, verifique a sua caixa de entrada (e o spam) para ativar a sua conta.
+          <p className="text-slate-500 font-medium mb-8">
+            Enviámos um link de confirmação para <span className="text-secondary font-bold">{form.email}</span>.
           </p>
           <button 
             onClick={() => { setSuccess(false); setIsRegister(false); }}
@@ -131,56 +122,35 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex bg-background selection:bg-primary/30 notranslate">
-      {/* Left Panel - Branding */}
+      {/* Left Panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-secondary flex-col justify-between p-14 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-primary/10 rounded-full blur-3xl -translate-y-1/3 translate-x-1/3 animate-pulse"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3"></div>
-
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30">
+            <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center shadow-lg">
               <BarChart3 size={24} className="text-white" />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tighter">Finance<span className="text-primary">OS</span></h1>
           </div>
-          <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.3em] mt-3">Inteligência Financeira</p>
         </div>
-
         <div className="relative z-10 max-w-lg">
           <h2 className="text-6xl font-extrabold text-white leading-[1.1] tracking-tight">
             Gestão profissional <span className="text-primary">unificada</span>.
           </h2>
           <p className="text-slate-400 mt-8 text-xl leading-relaxed font-medium">
-            Seja para as suas finanças pessoais ou para gerir múltiplos clientes, oferecemos a ferramenta definitiva de sucesso financeiro.
+            Seja para as suas finanças pessoais ou para gerir múltiplos clientes.
           </p>
         </div>
-
         <div className="relative z-10 flex items-center justify-between border-t border-white/5 pt-8">
-          <p className="text-slate-500 text-xs font-medium">
-            © 2026 FinanceOS. O seu futuro financeiro começa aqui.
-          </p>
+          <p className="text-slate-500 text-xs font-medium">© 2026 FinanceOS.</p>
         </div>
       </div>
 
-      {/* Right Panel - Form */}
+      {/* Right Panel */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 bg-slate-50/30">
-        
-        {/* Mobile Header (Only visible on small screens) */}
-        <div className="lg:hidden flex flex-col items-center mb-6 mt-2">
-          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center shadow-xl shadow-primary/30 mb-4">
-            <BarChart3 size={32} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-black text-secondary tracking-tighter">Finance<span className="text-primary">OS</span></h1>
-          <p className="text-slate-400 text-[8px] font-black uppercase tracking-[0.3em] mt-2">Inteligência Financeira</p>
-        </div>
-
-        <div className="w-full max-w-md bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl shadow-slate-200/50 border border-white relative overflow-hidden">
-          
+        <div className="w-full max-w-md bg-white p-6 md:p-10 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl border border-white relative overflow-hidden">
           {isRegister && registerStep === 2 && (
-            <button 
-              onClick={() => setRegisterStep(1)}
-              className="absolute left-8 top-8 p-2 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-xl transition-all"
-            >
+            <button onClick={() => setRegisterStep(1)} className="absolute left-8 top-8 p-2 text-slate-400 hover:text-secondary hover:bg-slate-100 rounded-xl transition-all">
               <ArrowLeft size={20} />
             </button>
           )}
@@ -200,52 +170,43 @@ const Login = () => {
             <div key="welcome-step" className="space-y-4">
               <button 
                 onClick={() => selectType('personal')}
-                className="w-full p-6 border-2 border-slate-100 rounded-3xl flex items-center gap-4 hover:border-primary hover:bg-primary/5 transition-all group text-left"
+                onKeyDown={(e) => e.key === 'Enter' && selectType('personal')}
+                className="w-full p-6 border-2 border-slate-100 rounded-3xl flex items-center gap-4 hover:border-primary hover:bg-primary/5 transition-all group text-left focus:ring-4 focus:ring-primary/10 outline-none"
               >
                 <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                   <User size={28} />
                 </div>
                 <div>
                   <h4 className="font-bold text-secondary text-lg">Uso Pessoal</h4>
-                  <p className="text-xs text-slate-400 font-medium">Giro as minhas próprias finanças e objetivos.</p>
+                  <p className="text-xs text-slate-400 font-medium">Giro as minhas próprias finanças.</p>
                 </div>
                 <ArrowRight size={20} className="ml-auto text-slate-200 group-hover:text-primary transition-colors" />
               </button>
 
               <button 
                 onClick={() => selectType('business')}
-                className="w-full p-6 border-2 border-slate-100 rounded-3xl flex items-center gap-4 hover:border-secondary hover:bg-secondary/5 transition-all group text-left"
+                onKeyDown={(e) => e.key === 'Enter' && selectType('business')}
+                className="w-full p-6 border-2 border-slate-100 rounded-3xl flex items-center gap-4 hover:border-secondary hover:bg-secondary/5 transition-all group text-left focus:ring-4 focus:ring-secondary/10 outline-none"
               >
                 <div className="w-14 h-14 bg-secondary/10 text-secondary rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                   <Briefcase size={28} />
                 </div>
                 <div>
                   <h4 className="font-bold text-secondary text-lg">Uso Profissional</h4>
-                  <p className="text-xs text-slate-400 font-medium">Contabilista ou empresa gerindo vários clientes.</p>
+                  <p className="text-xs text-slate-400 font-medium">Contabilista ou empresa.</p>
                 </div>
                 <ArrowRight size={20} className="ml-auto text-slate-200 group-hover:text-secondary transition-colors" />
               </button>
 
               <p className="text-center text-sm text-slate-500 mt-8">
                 Já tem uma conta?{' '}
-                <button
-                  onClick={() => { setIsRegister(false); setError(''); }}
-                  className="text-primary font-bold hover:underline"
-                >
-                  Entrar aqui
-                </button>
+                <button onClick={() => { setIsRegister(false); setError(''); }} className="text-primary font-bold hover:underline">Entrar aqui</button>
               </p>
             </div>
           ) : (
             <div key="auth-form" className="animate-in fade-in slide-in-from-right-4 duration-500">
-              <button
-                type="button"
-                onClick={handleGoogleLogin}
-                disabled={loading}
-                className="w-full py-4 border border-slate-200 rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-50 transition-all font-bold text-secondary text-sm mb-6 active:scale-[0.98]"
-              >
-                <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
-                Continuar com o Google
+              <button type="button" onClick={handleGoogleLogin} disabled={loading} className="w-full py-4 border border-slate-200 rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-50 transition-all font-bold text-secondary text-sm mb-6 active:scale-[0.98]">
+                <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" /> Continuar com o Google
               </button>
 
               <div className="relative flex items-center justify-center mb-8">
@@ -253,11 +214,7 @@ const Login = () => {
                 <span className="absolute bg-white px-4 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ou Credenciais</span>
               </div>
 
-              {error && (
-                <div className="mb-6 p-4 rounded-2xl text-xs font-bold animate-in shake bg-negative/10 text-negative border border-negative/20">
-                  {error}
-                </div>
-              )}
+              {error && <div className="mb-6 p-4 rounded-2xl text-xs font-bold animate-in shake bg-negative/10 text-negative border border-negative/20">{error}</div>}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {isRegister && (
@@ -266,23 +223,15 @@ const Login = () => {
                       <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
                       <div className="relative group">
                         <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" />
-                        <input
-                          type="text" name="fullName" value={form.fullName} onChange={handleChange}
-                          placeholder="Ex: Helder Silva" required
-                          className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all"
-                        />
+                        <input type="text" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Ex: Helder Silva" required className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all" />
                       </div>
                     </div>
                     {accountType === 'business' && (
                       <div className="space-y-1.5">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nome da Empresa / Escritório</label>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nome da Empresa</label>
                         <div className="relative group">
                           <Briefcase size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-secondary transition-colors" />
-                          <input
-                            type="text" name="companyName" value={form.companyName} onChange={handleChange}
-                            placeholder="Ex: Contabilidade Global Lda" required
-                            className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-secondary/5 focus:border-secondary/20 outline-none transition-all"
-                          />
+                          <input type="text" name="companyName" value={form.companyName} onChange={handleChange} placeholder="Ex: Contabilidade Global" required className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-secondary/5 focus:border-secondary/20 outline-none transition-all" />
                         </div>
                       </div>
                     )}
@@ -290,14 +239,10 @@ const Login = () => {
                 )}
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Endereço de Email</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
                   <div className="relative group">
                     <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" />
-                    <input
-                      type="email" name="email" value={form.email} onChange={handleChange}
-                      placeholder="helder@exemplo.com" required
-                      className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all"
-                    />
+                    <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="helder@exemplo.com" required className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all" />
                   </div>
                 </div>
 
@@ -305,18 +250,8 @@ const Login = () => {
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Palavra-passe</label>
                   <div className="relative group">
                     <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      name="password" value={form.password} onChange={handleChange}
-                      placeholder="••••••••" required minLength={6}
-                      className="w-full pl-11 pr-12 py-4 bg-slate-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all"
-                    />
-                    <button
-                      type="button" onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-secondary transition-colors"
-                    >
-                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
+                    <input type={showPassword ? 'text' : 'password'} name="password" value={form.password} onChange={handleChange} placeholder="••••••••" required minLength={6} className="w-full pl-11 pr-12 py-4 bg-slate-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-secondary transition-colors">{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button>
                   </div>
                 </div>
 
@@ -325,42 +260,19 @@ const Login = () => {
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Confirmar Palavra-passe</label>
                     <div className="relative group">
                       <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        name="confirmPassword" value={form.confirmPassword} onChange={handleChange}
-                        placeholder="••••••••" required
-                        className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all"
-                      />
+                      <input type={showPassword ? 'text' : 'password'} name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="••••••••" required className="w-full pl-11 pr-4 py-4 bg-slate-50 border border-transparent rounded-2xl text-sm focus:bg-white focus:ring-4 focus:ring-primary/5 focus:border-primary/20 outline-none transition-all" />
                     </div>
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`w-full py-4 text-white font-extrabold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-2xl disabled:opacity-70 mt-6 ${
-                    accountType === 'business' && isRegister ? 'bg-secondary shadow-secondary/20 hover:bg-slate-800' : 'bg-primary shadow-primary/20 hover:bg-primary-dark'
-                  }`}
-                >
-                  {loading ? (
-                    <Loader2 size={20} className="animate-spin" />
-                  ) : (
-                    <>
-                      {isRegister ? 'Finalizar Registo' : 'Entrar no Sistema'}
-                      <ArrowRight size={20} />
-                    </>
-                  )}
+                <button type="submit" disabled={loading} className={`w-full py-4 text-white font-extrabold rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-2xl mt-6 ${accountType === 'business' && isRegister ? 'bg-secondary shadow-secondary/20 hover:bg-slate-800' : 'bg-primary shadow-primary/20 hover:bg-primary-dark'}`}>
+                  {loading ? <Loader2 size={20} className="animate-spin" /> : <>{isRegister ? 'Finalizar Registo' : 'Entrar no Sistema'} <ArrowRight size={20} /></>}
                 </button>
               </form>
 
               <p className="text-center text-sm text-slate-500 mt-10">
                 {isRegister ? 'Já tem uma conta?' : 'Ainda não tem conta?'}{' '}
-                <button
-                  onClick={() => { setIsRegister(!isRegister); setRegisterStep(1); setError(''); }}
-                  className="text-primary font-bold hover:underline"
-                >
-                  {isRegister ? 'Entrar aqui' : 'Registar gratuitamente'}
-                </button>
+                <button onClick={() => { setIsRegister(!isRegister); setRegisterStep(1); setError(''); }} className="text-primary font-bold hover:underline">{isRegister ? 'Entrar aqui' : 'Registar gratuitamente'}</button>
               </p>
             </div>
           )}

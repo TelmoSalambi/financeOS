@@ -99,7 +99,9 @@ const Dashboard = () => {
     return { income, expense };
   }, [filteredTransactions]);
 
-  // Prepare Chart Data
+  // FIX #5: Otimização O(N+M) — pré-agrupa transações por data num Map,
+  // depois itera os dias uma única vez com lookup O(1).
+  // Antes: O(N*M) com .filter() dentro de .map() — congelava em períodos de 1 ano.
   const evolutionData = useMemo(() => {
     if (!filteredTransactions.length) return [];
     
@@ -112,27 +114,33 @@ const Dashboard = () => {
       case '1Y': start = startOfYear(now); break;
       default: start = startOfMonth(now);
     }
-    
+
+    // Fase 1: Pré-agrupar transações por data (O(N) — uma passagem)
+    const dailyNet = {};
+    filteredTransactions.forEach(t => {
+      const d = t.date; // já é string 'YYYY-MM-DD'
+      const val = t.type === 'income' ? Number(t.amount) : -Number(t.amount);
+      dailyNet[d] = (dailyNet[d] || 0) + val;
+    });
+
+    // Fase 2: Iterar dias e lookup O(1) no Map (O(M) — uma passagem)
     const days = eachDayOfInterval({ start, end: now });
-    let runningBalance = 0; 
+    let runningBalance = 0;
     
-    return days.map(day => {
-      const dayTransactions = filteredTransactions.filter(t => isSameDay(parseISO(t.date), day));
-      const dayNet = dayTransactions.reduce((acc, t) => 
-        t.type === 'income' ? acc + Number(t.amount) : acc - Number(t.amount)
-      , 0);
-      
-      runningBalance += dayNet;
+    const chartData = days.map(day => {
+      const dateKey = format(day, 'yyyy-MM-dd');
+      runningBalance += dailyNet[dateKey] || 0;
       
       return {
         name: format(day, period === '1S' ? 'eee' : 'dd MMM', { locale: ptBR }),
         val: runningBalance
       };
-    }).filter((_, i) => {
-      if (period === '1Y') return i % 30 === 0;
-      if (period === '3M') return i % 10 === 0;
-      return true;
     });
+
+    // Reduzir pontos para períodos longos (evita eixo X ilegível)
+    if (period === '1Y') return chartData.filter((_, i) => i % 30 === 0 || i === chartData.length - 1);
+    if (period === '3M') return chartData.filter((_, i) => i % 10 === 0 || i === chartData.length - 1);
+    return chartData;
   }, [filteredTransactions, period]);
 
   // Prepare Category Data

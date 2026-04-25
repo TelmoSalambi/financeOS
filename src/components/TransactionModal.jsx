@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Save, Calendar, Tag, FileText, Loader2, RefreshCw, Check } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useCategories } from '../hooks/useCategories';
@@ -8,20 +7,53 @@ import { toast } from 'sonner';
 
 const TransactionModal = ({ isOpen, onClose, editingTransaction = null, isMobile = false }) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [type, setType] = useState(editingTransaction?.type || 'expense');
+  const [type, setType] = useState('expense');
   const [loading, setLoading] = useState(false);
   const { categories } = useCategories(type);
   
   const [formData, setFormData] = useState({
-    amount: editingTransaction?.amount?.toString() || '',
-    date: editingTransaction?.date || new Date().toISOString().split('T')[0],
-    category_id: editingTransaction?.category_id || '',
-    description: editingTransaction?.description || '',
-    recurrence: editingTransaction?.recurrence || 'once'
+    amount: '',
+    date: new Date().toISOString().split('T')[0],
+    category_id: '',
+    description: '',
+    recurrence: 'once',
   });
 
+  // ─────────────────────────────────────────────
+  // FIX #1: Resetar formulário quando o modal abre ou muda de transação.
+  //
+  // PROBLEMA: useState só corre na montagem. Se o modal não desmonta
+  // (controlado por isOpen), abrir para editar → fechar → abrir para
+  // "novo" mantinha os dados da edição anterior no formulário.
+  //
+  // CORREÇÃO: useEffect sincroniza o estado sempre que isOpen ou
+  // editingTransaction mudam.
+  // ─────────────────────────────────────────────
+  useEffect(() => {
+    if (isOpen) {
+      setType(editingTransaction?.type || 'expense');
+      setFormData({
+        amount:      editingTransaction?.amount?.toString() || '',
+        date:        editingTransaction?.date || new Date().toISOString().split('T')[0],
+        category_id: editingTransaction?.category_id || '',
+        description: editingTransaction?.description || '',
+        recurrence:  editingTransaction?.recurrence || 'once',
+      });
+    }
+  }, [editingTransaction, isOpen]);
+
+  // ─────────────────────────────────────────────
+  // FIX #6: Resetar category_id ao trocar de tipo.
+  //
+  // PROBLEMA: Ao mudar de "Despesa" para "Receita", a categoria
+  // selecionada (ex: "Alimentação") pertence ao tipo antigo.
+  // Se o utilizador submeter sem trocar, envia uma categoria
+  // de despesa numa transação de receita — dados incoerentes na BD.
+  // ─────────────────────────────────────────────
+  const handleTypeChange = (newType) => {
+    setType(newType);
+    setFormData(prev => ({ ...prev, category_id: '' }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,9 +62,23 @@ const TransactionModal = ({ isOpen, onClose, editingTransaction = null, isMobile
       toast.error('Sessão inválida. Por favor, recarregue a página.');
       return;
     }
-    
-    if (!formData.amount || !formData.category_id) {
-      toast.error('Preencha todos os campos obrigatórios (Valor e Categoria).');
+
+    // ─────────────────────────────────────────────
+    // FIX #2: Validação numérica robusta.
+    //
+    // PROBLEMA: parseFloat('abc') → NaN. O Supabase pode aceitar
+    // e guardar NaN na BD, corrompendo o histórico financeiro.
+    //
+    // CORREÇÃO: Validar antes de enviar. Rejeitar NaN e valores ≤ 0.
+    // ─────────────────────────────────────────────
+    const parsedAmount = parseFloat(formData.amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      toast.error('Insira um valor numérico válido e positivo.');
+      return;
+    }
+
+    if (!formData.category_id) {
+      toast.error('Selecione uma categoria.');
       return;
     }
     
@@ -42,13 +88,13 @@ const TransactionModal = ({ isOpen, onClose, editingTransaction = null, isMobile
       const payload = {
         user_id: user.id,
         type,
-        amount: parseFloat(formData.amount),
+        amount: parsedAmount,  // FIX #2: usar o valor já validado
         category_id: formData.category_id,
         description: formData.description || '',
         date: formData.date,
+        recurrence: formData.recurrence,
       };
 
-      // Promise race with 8-second timeout to prevent infinite loading
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Tempo de resposta excedido. Verifique a sua internet.')), 8000)
       );
@@ -66,19 +112,12 @@ const TransactionModal = ({ isOpen, onClose, editingTransaction = null, isMobile
         throw new Error(result.error.message || 'Erro ao comunicar com a base de dados.');
       }
       
-      // Dispatch custom event for instant UI update
       window.dispatchEvent(new CustomEvent('finance-stats-updated'));
-      
       toast.success(editingTransaction ? 'Transação atualizada!' : 'Transação guardada com sucesso!');
-      
-      // Reset form and close
       onClose();
 
-      if (location.pathname !== '/' && !editingTransaction) {
-        navigate('/');
-      }
     } catch (error) {
-      console.error('Save error:', error);
+      console.error('[TransactionModal] Save error:', error);
       toast.error(error.message || 'Ocorreu um erro inesperado.');
     } finally {
       setLoading(false);
@@ -97,16 +136,16 @@ const TransactionModal = ({ isOpen, onClose, editingTransaction = null, isMobile
             <X size={22} />
           </button>
           <h2 className="text-base font-bold text-secondary">{editingTransaction ? 'Editar Transação' : 'Nova Transação'}</h2>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <div className="w-10" />
         </div>
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-5 pt-5 pb-32">
-          {/* Type Toggle */}
+          {/* Type Toggle — FIX #6: usa handleTypeChange */}
           <div className="bg-slate-100 p-1 rounded-xl flex items-center mb-6 max-w-xs mx-auto">
             <button 
               type="button"
-              onClick={() => setType('expense')}
+              onClick={() => handleTypeChange('expense')}
               className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${type === 'expense' ? 'bg-white text-negative shadow-sm' : 'text-slate-500'}`}
             >
               {type === 'expense' && <Check size={14} strokeWidth={3} />}
@@ -114,7 +153,7 @@ const TransactionModal = ({ isOpen, onClose, editingTransaction = null, isMobile
             </button>
             <button 
               type="button"
-              onClick={() => setType('income')}
+              onClick={() => handleTypeChange('income')}
               className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${type === 'income' ? 'bg-white text-primary shadow-sm' : 'text-slate-500'}`}
             >
               {type === 'income' && <Check size={14} strokeWidth={3} />}
@@ -244,17 +283,18 @@ const TransactionModal = ({ isOpen, onClose, editingTransaction = null, isMobile
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          {/* Type Toggle — FIX #6: usa handleTypeChange */}
           <div className="bg-slate-100 p-1 rounded-xl flex items-center">
             <button 
               type="button"
-              onClick={() => { setType('expense'); }}
+              onClick={() => handleTypeChange('expense')}
               className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${type === 'expense' ? 'bg-white text-negative shadow-sm' : 'text-slate-500'}`}
             >
               Despesa
             </button>
             <button 
               type="button"
-              onClick={() => { setType('income'); }}
+              onClick={() => handleTypeChange('income')}
               className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${type === 'income' ? 'bg-white text-primary shadow-sm' : 'text-slate-500'}`}
             >
               Receita

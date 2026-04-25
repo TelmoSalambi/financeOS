@@ -1,30 +1,37 @@
 import React, { useState } from 'react';
 import Layout from '../components/Layout';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Bell, Shield, Wallet, Save, Loader2, CheckCircle2, Globe, Lock } from 'lucide-react';
+import { User, Shield, Save, Loader2, CheckCircle2, Globe, Lock, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Configuracoes = () => {
   const { user, deleteAccount } = useAuth();
   const [loading, setLoading] = useState(false);
   const [currency, setCurrency] = useState('AOA');
+  
+  // FIX #4: Estados para o Modal de Confirmação customizado (substitui window.prompt)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteInput, setDeleteInput] = useState('');
+  const canConfirmDelete = deleteInput === 'APAGAR';
 
   const handleDeleteAccount = async () => {
-    if (window.confirm('⚠️ TEM A CERTEZA? Esta ação irá apagar todos os seus dados (transações, metas, etc.) permanentemente e não poderá ser desfeita.')) {
-      setLoading(true);
-      try {
-        await deleteAccount();
-      } catch (error) {
-        toast.error('Erro ao apagar conta. Tente novamente.');
-        setLoading(false);
-      }
+    if (!canConfirmDelete) return;
+    
+    setLoading(true);
+    try {
+      await deleteAccount();
+      toast.success('Conta apagada com sucesso.');
+    } catch (error) {
+      toast.error('Erro ao apagar conta. Tente novamente.');
+      setLoading(false);
+      setShowDeleteConfirm(false);
     }
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Simulating save
+    // Simulação de salvamento
     setTimeout(() => {
       toast.success('Configurações guardadas com sucesso!');
       setLoading(false);
@@ -40,7 +47,7 @@ const Configuracoes = () => {
           <p className="text-slate-500 mt-1 text-sm md:text-base">Gira as suas preferências e segurança da conta.</p>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-6 md:space-y-8">
+        <form onSubmit={handleSave} className="space-y-6 md:space-y-8 pb-20">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
               <h3 className="font-bold text-secondary">Perfil & Moeda</h3>
@@ -56,16 +63,11 @@ const Configuracoes = () => {
                 <div className="text-center sm:text-left flex-1 min-w-0">
                   <p className="font-bold text-secondary truncate w-full">{user?.user_metadata?.full_name || 'Usuário'}</p>
                   <p className="text-xs text-slate-400 truncate w-full">{user?.email}</p>
-                  <div className="mt-2 sm:hidden flex justify-center">
+                  <div className="mt-2 flex justify-center sm:justify-start">
                     <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-1">
                       <CheckCircle2 size={10} /> Verificado
                     </span>
                   </div>
-                </div>
-                <div className="hidden sm:block">
-                  <span className="px-3 py-1 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest rounded-full flex items-center gap-1">
-                    <CheckCircle2 size={10} /> Verificado
-                  </span>
                 </div>
               </div>
 
@@ -77,7 +79,7 @@ const Configuracoes = () => {
                     <select 
                       value={currency}
                       onChange={e => setCurrency(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-transparent rounded-xl text-sm focus:bg-white focus:border-primary/20 outline-none"
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-transparent rounded-xl text-sm focus:bg-white focus:border-primary/20 outline-none transition-all"
                     >
                       <option value="AOA">Kwanza (Kz)</option>
                       <option value="USD">Dólar ($)</option>
@@ -135,29 +137,65 @@ const Configuracoes = () => {
             </div>
           </div>
 
+          {/* ZONA DE PERIGO — FIX #4: Confirmação Inline Segura */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1">
               <h3 className="font-bold text-negative">Zona de Perigo</h3>
               <p className="text-xs text-slate-400 mt-1">Ações irreversíveis na sua conta.</p>
             </div>
-            <div className="md:col-span-2 bento-card border-negative/10 bg-negative/5">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-2">
-                <div className="text-center sm:text-left">
-                  <h4 className="text-sm font-bold text-negative">Apagar Conta</h4>
-                  <p className="text-[10px] text-negative/60 font-medium leading-relaxed">
-                    Todos os seus dados, transações e configurações serão removidos permanentemente. 
-                    Esta ação não pode ser desfeita.
-                  </p>
+            <div className="md:col-span-2 bento-card border-negative/20 bg-negative/5">
+              {!showDeleteConfirm ? (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-center sm:text-left">
+                    <h4 className="text-sm font-bold text-negative">Apagar Conta</h4>
+                    <p className="text-[10px] text-negative/60 font-medium leading-relaxed">
+                      Esta ação é permanente e removerá todos os seus dados.
+                    </p>
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-full sm:w-auto px-6 py-2.5 bg-white text-negative border border-negative/20 font-bold rounded-xl hover:bg-negative hover:text-white transition-all active:scale-95 text-xs shadow-sm"
+                  >
+                    Iniciar Processo
+                  </button>
                 </div>
-                <button 
-                  type="button"
-                  disabled={loading}
-                  onClick={handleDeleteAccount}
-                  className="w-full sm:w-auto px-6 py-3 bg-white text-negative border border-negative/20 font-bold rounded-xl hover:bg-negative hover:text-white transition-all active:scale-95 text-xs shadow-sm disabled:opacity-50"
-                >
-                  {loading ? 'A processar...' : 'Apagar Tudo'}
-                </button>
-              </div>
+              ) : (
+                <div className="space-y-4 animate-in zoom-in duration-200">
+                  <div className="flex items-start gap-3 p-3 bg-white/50 rounded-xl border border-negative/10">
+                    <AlertTriangle className="text-negative shrink-0" size={18} />
+                    <p className="text-xs text-negative font-medium leading-tight">
+                      Para confirmar a eliminação permanente, escreva <span className="font-black">APAGAR</span> abaixo.
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input 
+                      type="text"
+                      placeholder="Escreva APAGAR aqui"
+                      value={deleteInput}
+                      onChange={e => setDeleteInput(e.target.value)}
+                      className="flex-1 px-4 py-2.5 bg-white border border-negative/20 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-negative/5 uppercase transition-all"
+                    />
+                    <div className="flex gap-2">
+                      <button 
+                        type="button"
+                        disabled={!canConfirmDelete || loading}
+                        onClick={handleDeleteAccount}
+                        className="flex-1 sm:flex-none px-6 py-2.5 bg-negative text-white font-bold rounded-xl disabled:opacity-30 disabled:grayscale transition-all flex items-center justify-center gap-2"
+                      >
+                        {loading ? <Loader2 size={16} className="animate-spin" /> : <><Trash2 size={16} /> Apagar</>}
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => { setShowDeleteConfirm(false); setDeleteInput(''); }}
+                        className="px-4 py-2.5 bg-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-300 transition-colors text-xs"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

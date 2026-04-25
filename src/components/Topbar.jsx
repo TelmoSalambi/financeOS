@@ -1,9 +1,24 @@
+import React, { useEffect } from 'react';
 import { Search, Bell, History, User, Menu } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Topbar = ({ title = 'Visão Geral', onSearchClick, isMobile, onMenuClick, sidebarWidth }) => {
-  const { user } = useAuth();
-  const fullName = user?.user_metadata?.full_name || 'Usuário';
+  // FIX #25: Usar profile (fonte de verdade) em vez de user_metadata
+  const { user, profile } = useAuth();
+  const fullName = profile?.full_name || user?.user_metadata?.full_name || 'Usuário';
+
+  // FIX #23: Implementar o atalho real Ctrl+K para pesquisa
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        onSearchClick?.();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onSearchClick]);
 
   return (
     <header 
@@ -32,7 +47,7 @@ const Topbar = ({ title = 'Visão Geral', onSearchClick, isMobile, onMenuClick, 
           <Search size={16} className="group-hover:scale-110 transition-transform" />
           <span className="text-xs font-medium">Pesquisar...</span>
           <kbd className="hidden md:inline-flex h-5 select-none items-center gap-1 rounded border border-slate-200 bg-white px-1.5 font-mono text-[10px] font-bold text-slate-400">
-            <span className="text-[8px]">Ctrl</span> K
+            <span className="text-[8px]">{navigator?.platform?.indexOf('Mac') > -1 ? '⌘' : 'Ctrl'}</span> K
           </kbd>
         </button>
 
@@ -62,8 +77,8 @@ const Topbar = ({ title = 'Visão Geral', onSearchClick, isMobile, onMenuClick, 
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Conta Verificada</p>
           </div>
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-500 overflow-hidden shadow-sm group-hover:border-primary/30 transition-all shrink-0">
-            {user?.user_metadata?.avatar_url ? (
-              <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+            {profile?.avatar_url || user?.user_metadata?.avatar_url ? (
+              <img src={profile?.avatar_url || user?.user_metadata?.avatar_url} alt="Profile" className="w-full h-full object-cover" />
             ) : (
               <User size={18} />
             )}

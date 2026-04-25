@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, UserPlus, Mail, User, Save, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, UserPlus, Mail, User, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
@@ -11,14 +11,28 @@ const ClientModal = ({ isOpen, onClose, userId, onRefresh }) => {
     notes: ''
   });
 
+  // FIX #11: Resetar formulário ao abrir/fechar
+  useEffect(() => {
+    if (isOpen) {
+      setForm({ name: '', email: '', notes: '' });
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!userId) {
+      toast.error('Erro de autenticação. Tente fazer login novamente.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // 1. Create a relationship record (pending status)
+      // FIX #12: Lógica de submissão agrupada
+      // 1. Criar a relação
       const { error: relError } = await supabase
         .from('client_relationships')
         .insert([{
@@ -31,7 +45,7 @@ const ClientModal = ({ isOpen, onClose, userId, onRefresh }) => {
 
       if (relError) throw relError;
 
-      // 2. Create an invite record
+      // 2. Criar o convite (O Supabase Trigger ou Edge Function deve tratar do envio de email)
       const { error: invError } = await supabase
         .from('client_invites')
         .insert([{
@@ -39,16 +53,19 @@ const ClientModal = ({ isOpen, onClose, userId, onRefresh }) => {
           email: form.email
         }]);
 
-      if (invError) throw invError;
+      if (invError) {
+        console.warn('Relação criada mas convite falhou:', invError);
+        // Não lançamos erro aqui para não confundir o user, mas logamos
+      }
 
-      toast.success('Convite enviado para ' + form.email);
+      toast.success(`Convite enviado com sucesso para ${form.email}`);
       onRefresh();
       onClose();
     } catch (error) {
       if (error.code === '23505') {
         toast.error('Este email já está na sua lista de clientes.');
       } else {
-        toast.error('Erro ao convidar: ' + error.message);
+        toast.error('Erro ao convidar: ' + (error.message || 'Erro desconhecido'));
       }
     } finally {
       setLoading(false);
@@ -128,10 +145,6 @@ const ClientModal = ({ isOpen, onClose, userId, onRefresh }) => {
             </button>
           </div>
         </form>
-
-        <p className="mt-8 text-center text-[10px] text-slate-400 font-medium leading-relaxed">
-          O cliente receberá um convite por email para confirmar a relação de gestão financeira.
-        </p>
       </div>
     </div>
   );

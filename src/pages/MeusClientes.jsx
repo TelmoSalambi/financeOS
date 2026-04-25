@@ -5,15 +5,14 @@ import {
   Plus, 
   Search, 
   Filter, 
-  MoreVertical, 
   User, 
-  ArrowUpRight, 
   Mail, 
   Clock, 
   CheckCircle2, 
   Loader2,
   ExternalLink,
-  Briefcase
+  Briefcase,
+  X
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,10 +26,17 @@ const MeusClientes = () => {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // FIX #9: Estado para filtros funcionais
+  const [statusFilter, setStatusFilter] = useState('all'); // all, active, pending
+  const [showFilters, setShowFilters] = useState(false);
 
   const fetchClients = useCallback(async () => {
     if (!user?.id) return;
-    setLoading(true);
+    
+    // Não fazemos setLoading(true) se já tivermos dados (evita flash branco)
+    if (clients.length === 0) setLoading(true);
+
     try {
       const { data, error } = await supabase
         .from('client_relationships')
@@ -45,19 +51,23 @@ const MeusClientes = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, clients.length]);
 
+  // FIX #8: Cleanup de useEffect simplificado
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchClients();
-    }, 0);
-    return () => clearTimeout(timer);
+    fetchClients();
   }, [fetchClients]);
 
-  const filteredClients = (clients || []).filter(c => 
-    c.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    c.client_email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Lógica de filtragem combinada (Busca + Status)
+  const filteredClients = (clients || []).filter(c => {
+    const matchesSearch = 
+      c.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      c.client_email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' ? true : c.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <Layout title="Portal Profissional">
@@ -86,36 +96,70 @@ const MeusClientes = () => {
 
         {/* Stats Summary */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-10 md:mb-12">
-          <div className="bento-card bg-slate-50 border-none p-6 md:p-8">
+          <div 
+            onClick={() => setStatusFilter('all')}
+            className={`bento-card p-6 md:p-8 cursor-pointer transition-all ${statusFilter === 'all' ? 'ring-2 ring-secondary bg-white' : 'bg-slate-50 border-none'}`}
+          >
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Total de Clientes</p>
             <h3 className="text-2xl md:text-3xl font-black text-secondary">{clients.length}</h3>
           </div>
-          <div className="bento-card bg-emerald-50 border-none p-6 md:p-8">
+          <div 
+            onClick={() => setStatusFilter('active')}
+            className={`bento-card p-6 md:p-8 cursor-pointer transition-all ${statusFilter === 'active' ? 'ring-2 ring-emerald-500 bg-white' : 'bg-emerald-50 border-none'}`}
+          >
             <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400 mb-2">Clientes Ativos</p>
             <h3 className="text-2xl md:text-3xl font-black text-emerald-600">{clients.filter(c => c.status === 'active').length}</h3>
           </div>
-          <div className="bento-card bg-amber-50 border-none p-6 md:p-8 sm:col-span-2 md:col-span-1">
+          <div 
+            onClick={() => setStatusFilter('pending')}
+            className={`bento-card p-6 md:p-8 cursor-pointer transition-all ${statusFilter === 'pending' ? 'ring-2 ring-amber-500 bg-white' : 'bg-amber-50 border-none sm:col-span-2 md:col-span-1'}`}
+          >
             <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 mb-2">Convites Pendentes</p>
             <h3 className="text-2xl md:text-3xl font-black text-amber-600">{clients.filter(c => c.status === 'pending').length}</h3>
           </div>
         </div>
 
-        {/* Search & Filter */}
-        <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-8">
-          <div className="flex-1 relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-secondary transition-colors" size={20} />
-            <input 
-              type="text" 
-              placeholder="Pesquisar cliente..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 md:py-4 bg-white border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-secondary/5 focus:border-secondary/20 outline-none transition-all shadow-sm"
-            />
+        {/* Search & Filter — FIX #9: Funcionalidade real */}
+        <div className="flex flex-col gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+            <div className="flex-1 relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-secondary transition-colors" size={20} />
+              <input 
+                type="text" 
+                placeholder="Pesquisar cliente por nome ou email..." 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-3.5 md:py-4 bg-white border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-secondary/5 focus:border-secondary/20 outline-none transition-all shadow-sm"
+              />
+              {searchTerm && (
+                <button onClick={() => setSearchTerm('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-secondary">
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+            <button 
+              onClick={() => setShowFilters(!showFilters)}
+              className={`p-3.5 md:p-4 rounded-2xl transition-all shadow-sm flex items-center justify-center gap-2 border ${showFilters ? 'bg-secondary text-white border-secondary' : 'bg-white text-slate-400 border-slate-100 hover:text-secondary hover:border-slate-200'}`}
+            >
+              <Filter size={20} />
+              <span className="font-bold text-sm">Filtros</span>
+            </button>
           </div>
-          <button className="p-3.5 md:p-4 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-secondary hover:border-slate-200 transition-all shadow-sm flex items-center justify-center">
-            <Filter size={20} />
-            <span className="sm:hidden ml-2 font-bold text-sm">Filtros</span>
-          </button>
+
+          {showFilters && (
+            <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-2xl animate-in slide-in-from-top-2 duration-300">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 w-full mb-1 ml-1">Filtrar por Status</span>
+              {['all', 'active', 'pending'].map(s => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${statusFilter === s ? 'bg-secondary text-white shadow-md' : 'bg-white text-slate-500 hover:bg-slate-100'}`}
+                >
+                  {s === 'all' ? 'Todos' : s === 'active' ? 'Ativos' : 'Pendentes'}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -131,8 +175,18 @@ const MeusClientes = () => {
             <div className="max-w-md">
               <h3 className="text-xl font-bold text-secondary">Nenhum cliente encontrado</h3>
               <p className="text-sm text-slate-400 mt-2 font-medium leading-relaxed">
-                Comece a gerir as finanças de terceiros convidando o seu primeiro cliente hoje mesmo.
+                {searchTerm || statusFilter !== 'all' 
+                  ? 'Tente ajustar os seus filtros de pesquisa.' 
+                  : 'Comece a gerir as finanças de terceiros convidando o seu primeiro cliente hoje mesmo.'}
               </p>
+              {(searchTerm || statusFilter !== 'all') && (
+                <button 
+                  onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}
+                  className="mt-4 text-secondary font-black text-xs uppercase tracking-widest hover:underline"
+                >
+                  Limpar tudo
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -140,11 +194,11 @@ const MeusClientes = () => {
             {filteredClients.map(client => (
               <div 
                 key={client.id} 
-                className="bento-card group hover:translate-y-[-4px] cursor-pointer"
+                className={`bento-card group hover:translate-y-[-4px] transition-all cursor-pointer ${client.status === 'active' ? 'hover:shadow-2xl hover:shadow-secondary/5' : 'opacity-80'}`}
                 onClick={() => client.status === 'active' && navigate(`/clientes/${client.client_id}`)}
               >
                 <div className="flex justify-between items-start mb-6">
-                  <div className="w-14 h-14 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-secondary group-hover:text-white transition-all shadow-inner">
+                  <div className={`w-14 h-14 border rounded-2xl flex items-center justify-center transition-all shadow-inner ${client.status === 'active' ? 'bg-slate-50 border-slate-100 text-slate-400 group-hover:bg-secondary group-hover:text-white' : 'bg-slate-100 border-transparent text-slate-300'}`}>
                     <User size={28} />
                   </div>
                   <div className="flex gap-2">
@@ -157,12 +211,11 @@ const MeusClientes = () => {
                         <Clock size={10} /> Pendente
                       </span>
                     )}
-                    <button className="p-1 text-slate-300 hover:text-secondary"><MoreVertical size={16} /></button>
                   </div>
                 </div>
 
                 <div className="mb-8">
-                  <h4 className="text-lg font-black text-secondary group-hover:text-secondary transition-colors truncate">{client.client_name}</h4>
+                  <h4 className="text-lg font-black text-secondary truncate">{client.client_name}</h4>
                   <div className="flex items-center gap-2 text-xs text-slate-400 font-medium mt-1">
                     <Mail size={12} />
                     {client.client_email}
@@ -173,9 +226,13 @@ const MeusClientes = () => {
                   <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                     Desde {new Date(client.created_at).toLocaleDateString('pt-BR')}
                   </div>
-                  <div className={`flex items-center gap-1 text-xs font-black uppercase tracking-widest ${client.status === 'active' ? 'text-secondary' : 'text-slate-300'}`}>
-                    Aceder <ExternalLink size={14} className="group-hover:translate-x-1 group-hover:translate-y-[-1px] transition-transform" />
-                  </div>
+                  {client.status === 'active' ? (
+                    <div className="flex items-center gap-1 text-xs font-black uppercase tracking-widest text-secondary">
+                      Aceder <ExternalLink size={14} className="group-hover:translate-x-1 group-hover:translate-y-[-1px] transition-transform" />
+                    </div>
+                  ) : (
+                    <div className="text-[9px] font-bold text-slate-300 uppercase tracking-widest italic">Aguardando Aceitação</div>
+                  )}
                 </div>
               </div>
             ))}

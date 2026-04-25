@@ -13,6 +13,9 @@ const Despesas = ({ onEdit }) => {
   const [monthFilter, setMonthFilter] = useState('');
   const [deleting, setDeleting] = useState(null);
 
+  // FIX #3: Estado para confirmação inline — substitui window.confirm
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
   const despesas = useMemo(() => {
     return transactions
       .filter(t => t.type === 'expense')
@@ -24,13 +27,18 @@ const Despesas = ({ onEdit }) => {
       });
   }, [transactions, search, monthFilter]);
 
+  // FIX #3 + #7: Confirmação inline + try/finally
   const handleDelete = async (id) => {
     toast.promise(async () => {
       setDeleting(id);
-      const { error } = await supabase.from('transactions').delete().eq('id', id);
-      if (error) throw error;
-      await refetch();
-      setDeleting(null);
+      try {
+        const { error } = await supabase.from('transactions').delete().eq('id', id);
+        if (error) throw error;
+        await refetch();
+      } finally {
+        setDeleting(null);
+        setConfirmDeleteId(null);
+      }
     }, {
       loading: 'Eliminando despesa...',
       success: 'Despesa eliminada com sucesso!',
@@ -91,7 +99,6 @@ const Despesas = ({ onEdit }) => {
         </div>
 
         <div className="bento-card !p-0 overflow-hidden border-none shadow-xl shadow-slate-200/40">
-          {/* Header - Hidden on Mobile */}
           <div className="hidden md:block px-8 py-5 border-b border-slate-100 bg-slate-50/50">
             <div className="grid grid-cols-12 gap-4">
               <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 col-span-2">Data</span>
@@ -120,7 +127,6 @@ const Despesas = ({ onEdit }) => {
             <div className="divide-y divide-slate-100">
               {despesas.map(t => (
                 <div key={t.id} className="px-4 md:px-8 py-5 flex flex-col md:grid md:grid-cols-12 gap-3 md:gap-4 items-start md:items-center hover:bg-slate-50/80 transition-colors group relative">
-                  {/* Mobile Date & Category */}
                   <div className="flex md:hidden items-center justify-between w-full mb-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                       {format(parseISO(t.date), "dd MMM, yyyy", { locale: ptBR })}
@@ -130,30 +136,26 @@ const Despesas = ({ onEdit }) => {
                     </span>
                   </div>
 
-                  {/* Desktop Date */}
                   <span className="hidden md:block text-sm font-medium text-slate-500 col-span-2">
                     {format(parseISO(t.date), "dd MMM, yyyy", { locale: ptBR })}
                   </span>
 
-                  {/* Description */}
                   <span className="text-sm font-bold text-secondary md:col-span-5 truncate w-full md:w-auto">
                     {t.description || '—'}
                   </span>
 
-                  {/* Desktop Category */}
                   <div className="hidden md:block md:col-span-2">
                     <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 uppercase">
                       {t.categories?.name || 'Diversos'}
                     </span>
                   </div>
 
-                  {/* Value */}
                   <span className="text-lg md:text-base font-bold text-negative md:col-span-2 md:text-right w-full md:w-auto flex justify-between md:block">
                     <span className="md:hidden text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center">Valor</span>
                     <span>-{Number(t.amount).toLocaleString('pt-BR')} <span className="text-[10px] font-normal">Kz</span></span>
                   </span>
 
-                  {/* Actions */}
+                  {/* Actions — FIX #3: Confirmação inline */}
                   <div className="flex justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity w-full md:w-auto md:justify-center border-t md:border-none pt-3 md:pt-0 mt-2 md:mt-0">
                     <button
                       onClick={() => onEdit(t)}
@@ -162,14 +164,32 @@ const Despesas = ({ onEdit }) => {
                     >
                       <Edit3 size={18} className="md:w-4 md:h-4" />
                     </button>
-                    <button
-                      onClick={() => handleDelete(t.id)}
-                      disabled={deleting === t.id}
-                      className="p-2.5 md:p-2 text-slate-400 hover:text-negative hover:bg-negative/5 rounded-xl transition-all bg-slate-50 md:bg-transparent"
-                      title="Eliminar"
-                    >
-                      {deleting === t.id ? <Loader2 size={18} className="animate-spin md:w-4 md:h-4" /> : <Trash2 size={18} className="md:w-4 md:h-4" />}
-                    </button>
+
+                    {confirmDeleteId === t.id ? (
+                      <div className="flex items-center gap-1.5 animate-in fade-in zoom-in duration-200">
+                        <button
+                          onClick={() => handleDelete(t.id)}
+                          disabled={deleting === t.id}
+                          className="px-3 py-1.5 text-xs font-bold text-white bg-negative rounded-lg hover:bg-negative/90 transition-colors disabled:opacity-50"
+                        >
+                          {deleting === t.id ? <Loader2 size={12} className="animate-spin" /> : 'Sim'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                        >
+                          Não
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(t.id)}
+                        className="p-2.5 md:p-2 text-slate-400 hover:text-negative hover:bg-negative/5 rounded-xl transition-all bg-slate-50 md:bg-transparent"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={18} className="md:w-4 md:h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

@@ -13,6 +13,9 @@ const Receitas = ({ onEdit }) => {
   const [monthFilter, setMonthFilter] = useState('');
   const [deleting, setDeleting] = useState(null);
 
+  // FIX #3: Estado para confirmação inline — substitui window.confirm
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+
   const receitas = useMemo(() => {
     return transactions
       .filter(t => t.type === 'income')
@@ -24,13 +27,20 @@ const Receitas = ({ onEdit }) => {
       });
   }, [transactions, search, monthFilter]);
 
+  // FIX #3: Eliminação sem window.confirm — usa confirmação inline.
+  // FIX #7: try/finally garante que setDeleting(null) corre sempre,
+  //         mesmo em caso de erro — evita loading infinito no botão.
   const handleDelete = async (id) => {
     toast.promise(async () => {
       setDeleting(id);
-      const { error } = await supabase.from('transactions').delete().eq('id', id);
-      if (error) throw error;
-      await refetch();
-      setDeleting(null);
+      try {
+        const { error } = await supabase.from('transactions').delete().eq('id', id);
+        if (error) throw error;
+        await refetch();
+      } finally {
+        setDeleting(null);
+        setConfirmDeleteId(null);
+      }
     }, {
       loading: 'Eliminando receita...',
       success: 'Receita eliminada com sucesso!',
@@ -153,7 +163,7 @@ const Receitas = ({ onEdit }) => {
                     <span>+{Number(t.amount).toLocaleString('pt-BR')} <span className="text-[10px] font-normal">Kz</span></span>
                   </span>
 
-                  {/* Actions */}
+                  {/* Actions — FIX #3: Confirmação inline */}
                   <div className="flex justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity w-full md:w-auto md:justify-center border-t md:border-none pt-3 md:pt-0 mt-2 md:mt-0">
                     <button
                       onClick={() => onEdit(t)}
@@ -162,14 +172,32 @@ const Receitas = ({ onEdit }) => {
                     >
                       <Edit3 size={18} className="md:w-4 md:h-4" />
                     </button>
-                    <button
-                      onClick={() => handleDelete(t.id)}
-                      disabled={deleting === t.id}
-                      className="p-2.5 md:p-2 text-slate-400 hover:text-negative hover:bg-negative/5 rounded-xl transition-all bg-slate-50 md:bg-transparent"
-                      title="Eliminar"
-                    >
-                      {deleting === t.id ? <Loader2 size={18} className="animate-spin md:w-4 md:h-4" /> : <Trash2 size={18} className="md:w-4 md:h-4" />}
-                    </button>
+
+                    {confirmDeleteId === t.id ? (
+                      <div className="flex items-center gap-1.5 animate-in fade-in zoom-in duration-200">
+                        <button
+                          onClick={() => handleDelete(t.id)}
+                          disabled={deleting === t.id}
+                          className="px-3 py-1.5 text-xs font-bold text-white bg-negative rounded-lg hover:bg-negative/90 transition-colors disabled:opacity-50"
+                        >
+                          {deleting === t.id ? <Loader2 size={12} className="animate-spin" /> : 'Sim'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-3 py-1.5 text-xs font-bold text-slate-500 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                        >
+                          Não
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmDeleteId(t.id)}
+                        className="p-2.5 md:p-2 text-slate-400 hover:text-negative hover:bg-negative/5 rounded-xl transition-all bg-slate-50 md:bg-transparent"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={18} className="md:w-4 md:h-4" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
