@@ -1,17 +1,28 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ArrowUpCircle, Clock, User, Plus } from 'lucide-react';
+import { LayoutDashboard, ArrowUpCircle, Clock, User, Plus, Users, BarChart3 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
-const tabs = [
+const personalTabs = [
   { icon: LayoutDashboard, label: 'Início', path: '/' },
   { icon: ArrowUpCircle, label: 'Carteira', path: '/receitas' },
-  // Placeholder slot for the FAB
   { isFab: true },
   { icon: Clock, label: 'Extrato', path: '/historico' },
   { icon: User, label: 'Perfil', path: '/configuracoes' },
 ];
 
+const businessTabs = [
+  { icon: LayoutDashboard, label: 'Painel', path: '/' },
+  { icon: Users, label: 'Clientes', path: '/clientes' },
+  { isFab: true },
+  { icon: BarChart3, label: 'Relatórios', path: '/relatorios' },
+  { icon: User, label: 'Perfil', path: '/configuracoes' },
+];
+
 const MobileBottomNav = ({ onNewTransaction }) => {
+  const { isBusiness } = useAuth();
+  const tabs = isBusiness ? businessTabs : personalTabs;
+
   return (
     <nav className="mobile-bottom-nav">
       <div className="mobile-bottom-nav-inner">
@@ -49,3 +60,4 @@ const MobileBottomNav = ({ onNewTransaction }) => {
 };
 
 export default MobileBottomNav;
+

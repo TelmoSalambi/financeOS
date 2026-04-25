@@ -17,12 +17,24 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   /**
-   * Fetches the user profile from the 'profiles' table.
-   * If the profile doesn't exist or is missing account_type,
-   * it falls back to user_metadata and upserts the profile.
+   * Resolves the user profile with account_type.
+   * Priority: profiles table → user_metadata → 'personal' default.
+   * Auto-upserts missing profiles so the DB stays in sync.
    */
   const fetchProfile = async (currentUser) => {
     if (!currentUser?.id) return null;
+    
+    const meta = currentUser.user_metadata || {};
+    console.log('[FinanceOS] user_metadata:', JSON.stringify(meta));
+
+    // Build a fallback profile from metadata (always available)
+    const metaProfile = {
+      id: currentUser.id,
+      account_type: meta.account_type || 'personal',
+      full_name: meta.full_name || meta.name || '',
+      company_name: meta.company_name || '',
+    };
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -30,25 +42,25 @@ export const AuthProvider = ({ children }) => {
         .eq('id', currentUser.id)
         .single();
 
-      // If profile exists AND has account_type, use it directly
+      console.log('[FinanceOS] profiles table result:', { data, error: error?.message });
+
+      // If profile exists AND has a valid account_type, use it
       if (data && data.account_type) {
+        console.log('[FinanceOS] Using DB profile, account_type:', data.account_type);
         return data;
       }
 
-      // ── FALLBACK: read from user_metadata (where signUp stores it) ──
-      const meta = currentUser.user_metadata || {};
-      const accountType = data?.account_type || meta.account_type || 'personal';
-      const fullName = meta.full_name || meta.name || '';
-      const companyName = meta.company_name || '';
-
-      // Upsert the profile so future logins are instant
+      // DB profile is missing or incomplete — try to upsert from metadata
+      const accountType = meta.account_type || data?.account_type || 'personal';
       const profilePayload = {
         id: currentUser.id,
-        full_name: fullName,
+        full_name: meta.full_name || meta.name || data?.full_name || '',
         account_type: accountType,
-        company_name: companyName,
+        company_name: meta.company_name || data?.company_name || '',
         updated_at: new Date().toISOString(),
       };
+
+      console.log('[FinanceOS] Upserting profile with:', profilePayload);
 
       const { data: upserted, error: upsertError } = await supabase
         .from('profiles')
@@ -57,22 +69,16 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (upsertError) {
-        console.warn('Profile upsert failed:', upsertError.message);
-        // Still return a usable profile object from metadata
-        return { ...profilePayload, ...(data || {}) };
+        console.warn('[FinanceOS] Upsert failed:', upsertError.message, '- using metadata fallback');
+        return { ...metaProfile, ...(data || {}) , account_type: accountType };
       }
 
+      console.log('[FinanceOS] Upserted profile:', upserted);
       return upserted;
     } catch (err) {
-      console.error('fetchProfile error:', err);
-      // Absolute fallback — use metadata so the UI never breaks
-      const meta = currentUser.user_metadata || {};
-      return {
-        id: currentUser.id,
-        account_type: meta.account_type || 'personal',
-        full_name: meta.full_name || meta.name || '',
-        company_name: meta.company_name || '',
-      };
+      console.error('[FinanceOS] fetchProfile crash:', err);
+      console.log('[FinanceOS] Returning metadata fallback:', metaProfile);
+      return metaProfile;
     }
   };
 
@@ -182,8 +188,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Derive account type from the best available source
-  const accountType = profile?.account_type || user?.user_metadata?.account_type || 'personal';
+  // Derive account type — metadata is the MOST RELIABLE source since
+  // signUp() always stores it there, regardless of DB triggers
+  const accountType = user?.user_metadata?.account_type || profile?.account_type || 'personal';
+  console.log('[FinanceOS] Final accountType resolution:', accountType, '| isBusiness:', accountType === 'business');
 
   return (
     <AuthContext.Provider value={{ 
