@@ -77,8 +77,12 @@ const Login = () => {
     try {
       let result;
       if (isRegister) {
-        console.log('[Login] Tentando registo...');
+        console.log('🔍 [DEBUG] Botão "Finalizar Registo" clicado.');
+        console.log('🔍 [DEBUG] Dados a enviar:', { email: form.email, type: accountType });
+        
         result = await signUp(form.email, form.password, form.fullName, accountType, form.companyName);
+        
+        console.log('🔍 [DEBUG] Resposta do signUp recebida:', result);
         
         // FIX #74: Se o utilizador já existe, tenta fazer login automaticamente
         if (result?.error?.message?.includes('User already registered')) {
@@ -87,13 +91,11 @@ const Login = () => {
         }
 
         if (!result.error && result.data?.user) {
-          // Se o Supabase devolveu uma sessão (sem confirmação de email), o useEffect cuidará do resto
-          if (result.data.session) {
-            console.log('[Login] Sessão ativa detetada após registo/login.');
-            return;
-          }
+          console.log('[Login] Registo com sucesso:', result.data.user.email);
           
-          if (isMounted.current) {
+          // Se o Supabase já nos deu uma sessão (Auto-confirm ON), o useEffect no topo tratará do redirect.
+          // Se não houver sessão, mostramos o ecrã de sucesso para confirmarem o email.
+          if (!result.data.session && isMounted.current) {
             setSuccess(true);
             setLoading(false);
           }

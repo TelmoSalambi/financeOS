@@ -16,8 +16,10 @@ const Sidebar = ({ onNewTransaction, isMobile, mobileOpen, collapsed, onCloseMob
   const { signOut, isBusiness } = useAuth();
 
   const businessMenu = [
-    { name: 'Painel Geral',          icon: LayoutDashboard, path: '/' },
     { name: 'Meus Clientes',         icon: Users,           path: '/clientes' },
+    { name: 'Receitas Escritório',   icon: ArrowUpCircle,   path: '/receitas' },
+    { name: 'Despesas Escritório',   icon: ArrowDownCircle, path: '/despesas' },
+    { name: 'Simuladores',           icon: Calculator,      path: '/simuladores' },
     { name: 'Relatórios Agregados',  icon: BarChart3,       path: '/relatorios' },
   ];
 

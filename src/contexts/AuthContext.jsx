@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
   // ─────────────────────────────────────────────
   const fetchProfile = async (currentUser) => {
     try {
-      console.log('[Auth] Procurando perfil para:', currentUser.id);
+      console.log('🔍 [DEBUG] Iniciando fetchProfile para:', currentUser.email);
       setReady(false);
       
       const { data, error } = await supabase
@@ -171,19 +171,21 @@ export const AuthProvider = ({ children }) => {
   const signIn = (email, password) =>
     supabase.auth.signInWithPassword({ email, password });
 
-  const signUp = (email, password, fullName, accountType, companyName) =>
-    supabase.auth.signUp({
+  const signUp = (email, password, fullName, accountType, companyName) => {
+    console.log('🔍 [DEBUG] Chamando supabase.auth.signUp...');
+    return supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           full_name:    fullName,
-          account_type: accountType,   // 'business' ou 'personal'
+          account_type: accountType,
           company_name: companyName,
         },
         emailRedirectTo: `${window.location.origin}/`,
       },
     });
+  };
 
   const signInWithGoogle = () =>
     supabase.auth.signInWithOAuth({
